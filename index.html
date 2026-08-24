@@ -1676,21 +1676,26 @@ async function loadManut(){
     document.getElementById('manut-detail-card').style.display='none';
   }
 }
+const TIPO_SLUG={'Rádio':'radio','Bateria':'bateria','Sensor':'sensor','Coletor':'coletor','Tablet':'tablet'};
+let fotosAbertas=[];
+
 function filterManutTipo(tipoLabel, allItems){
   if(!allItems){
-    // re-fetch
+    // clique no card: ajusta o filtro ANTES de recarregar, com o valor sem acento
+    const slug=TIPO_SLUG[tipoLabel]||tipoLabel.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    document.getElementById('manut-tipo').value=slug;
     loadManut();
-    document.getElementById('manut-tipo').value=tipoLabel.toLowerCase();
     return;
   }
   const filtered=allItems.filter(it=>it.tipo===tipoLabel||it.tipo.includes(tipoLabel));
   const card=document.getElementById('manut-detail-card');
   document.getElementById('manut-detail-title').textContent=tipoLabel;
   const tb=document.getElementById('manut-tbody');tb.innerHTML='';
+  fotosAbertas=[];
   filtered.sort((a,b)=>b.data.localeCompare(a.data)).forEach(it=>{
     const tr=document.createElement('tr');
     const fotoCel=(it.fotos&&it.fotos.length)
-      ? it.fotos.map(src=>`<img src="${src}" onclick="abrirFoto('${src}')" style="width:42px;height:42px;object-fit:cover;border-radius:6px;margin-right:4px;cursor:zoom-in;border:1px solid var(--border);">`).join('')
+      ? it.fotos.map(src=>{fotosAbertas.push(src);return `<img src="${src}" onclick="abrirFoto(${fotosAbertas.length-1})" style="width:42px;height:42px;object-fit:cover;border-radius:6px;margin-right:4px;cursor:zoom-in;border:1px solid var(--border);">`;}).join('')
       : '<span style="color:#aab4be;font-size:11px;">—</span>';
     tr.innerHTML=`<td>${it.item}</td><td>${it.defeito}</td><td><span class="badge ${TC[it.turno]||'bb'}">Turno ${it.turno}</span></td><td>${fmtDate(it.data)}</td><td>${fotoCel}</td>`;
     tb.appendChild(tr);
@@ -1701,7 +1706,9 @@ function filterManutTipo(tipoLabel, allItems){
 }
 
 // Abre a foto em tela cheia
-function abrirFoto(src){
+function abrirFoto(i){
+  const src=typeof i==='number'?fotosAbertas[i]:i;
+  if(!src)return;
   let ov=document.getElementById('foto-overlay');
   if(!ov){
     ov=document.createElement('div');
