@@ -519,7 +519,7 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
   <!-- DASHBOARD -->
   <!-- ══ INVENTÁRIO DE MATERIAIS ══ -->
   <div id="kt-inv" style="display:none;">
-    <div class="card">
+    <div class="card" id="inv-form-card">
       <h3><div class="icon ib">📦</div>Contagem de Materiais</h3>
       <p style="font-size:12px;color:#7a8fa6;margin-bottom:12px;">Contagem quinzenal. Deixe em branco o que não for contado.</p>
       <div style="display:grid;grid-template-columns:150px 1fr;gap:9px;align-items:end;margin-bottom:10px;">
@@ -616,10 +616,13 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
       <div class="card" style="margin-bottom:0;"><h3><div class="icon ib">📊</div>Atividades por Período</h3><div class="chart-wrap"><canvas id="ch-atv"></canvas></div></div>
       <div class="card" style="margin-bottom:0;"><h3><div class="icon it">🔄</div>TPA por Atividade</h3><div class="chart-wrap"><canvas id="ch-tpa"></canvas></div></div>
     </div>
-    <div class="card"><h3><div class="icon ib">📋</div>Registros</h3>
-      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Hora</th><th>Período</th><th>Turno</th><th>Atividade</th><th>Detalhe</th></tr></thead><tbody id="kpi-tbody"></tbody></table></div>
-      <div id="kpi-loader" style="text-align:center;color:#7a8fa6;padding:26px;font-size:13px;">Carregando...</div>
+    <div class="card" id="dash-inv-card">
+      <h3><div class="icon ig">📦</div>Inventário de Materiais — Última Contagem</h3>
+      <div id="dash-inv-info" style="font-size:12px;color:#7a8fa6;font-weight:600;margin-bottom:14px;">Carregando...</div>
+      <div class="mini-dash" id="dash-inv-stats"></div>
+      <div id="dash-inv-barras" style="margin-top:16px;"></div>
     </div>
+    <div style="display:none;"><tbody id="kpi-tbody"></tbody><div id="kpi-loader"></div></div>
   </div>
 
   <!-- HISTÓRICO -->
@@ -1740,16 +1743,24 @@ function pintaSaldoNavio(todas){
   // saldo por porão
   const porPorao={};
   todas.forEach(h=>(h.ternos||[]).forEach(t=>{if(t.porao)porPorao[t.porao]=(porPorao[t.porao]||0)+(t.ton||0);}));
-  document.getElementById('nv-poroes').innerHTML=Object.entries(navioAtual.poroes||{}).map(([p,prev])=>{
-    const feito=porPorao[p]||0, rest=Math.max(0,prev-feito), pc=prev?Math.min(100,feito/prev*100):0;
-    return `<div style="display:grid;grid-template-columns:74px 1fr 110px;align-items:center;gap:10px;margin-bottom:7px;">
-      <div style="font-size:11px;font-weight:700;">Porão ${p}</div>
-      <div style="background:var(--bg);border-radius:4px;height:15px;overflow:hidden;">
-        <div style="height:100%;width:${pc}%;background:${pc>=100?'var(--green)':'var(--teal)'};border-radius:4px;"></div>
-      </div>
-      <div style="font-size:10.5px;font-weight:700;text-align:right;">${fmtT(feito)} / ${fmtT(prev)} t</div>
+  document.getElementById('nv-poroes').innerHTML=`
+    <div style="display:flex;align-items:flex-end;gap:14px;height:190px;padding:8px 4px 0;overflow-x:auto;">
+    ${Object.entries(navioAtual.poroes||{}).map(([p,prev])=>{
+      const feito=porPorao[p]||0, rest=Math.max(0,prev-feito);
+      const pc=prev?Math.min(100,feito/prev*100):0;
+      const alt=prev?(prev/Math.max(...Object.values(navioAtual.poroes))*100):0;
+      const cheio=pc>=99.5;
+      return `<div style="flex:1;min-width:56px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        <div style="font-size:11px;font-weight:800;margin-bottom:5px;color:${cheio?'var(--green)':'var(--dark)'};">${pc.toFixed(0)}%</div>
+        <div style="width:100%;max-width:52px;height:${Math.max(6,alt)}%;background:var(--bg);border-radius:5px 5px 0 0;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;position:relative;">
+          <div style="width:100%;height:${pc}%;background:${cheio?'var(--green)':'var(--teal)'};transition:height .5s;"></div>
+        </div>
+        <div style="font-size:10.5px;font-weight:700;margin-top:6px;">Porão ${p}</div>
+        <div style="font-size:9.5px;color:#7a8fa6;font-weight:600;">${fmtT(feito)}/${fmtT(prev)}</div>
+        ${rest>0?`<div style="font-size:9px;color:var(--orange);font-weight:700;">falta ${fmtT(rest)}</div>`:''}
+      </div>`;
+    }).join('')}
     </div>`;
-  }).join('');
 }
 
 function pintaGrade(horas){
@@ -1778,6 +1789,8 @@ const INV_ITENS=[{"id": 1, "nome": "Cinto de Segurança - Hercules", "min": 8, "
 let invUltima=null;
 
 async function loadInv(){
+  const pode=podeInventariar();
+  document.getElementById('inv-form-card').style.display=pode?'block':'none';
   const box=document.getElementById('inv-lista');
   document.getElementById('inv-data').value=document.getElementById('inv-data').value||today();
   document.getElementById('inv-resp').textContent=currentLider?.nome||'—';
@@ -1814,37 +1827,37 @@ async function loadInv(){
 }
 
 // Dashboard da última contagem — barras horizontais proporcionais ao máximo
-function pintaDashInv(){
-  const card=document.getElementById('inv-dash-card');
-  if(!invUltima||!(invUltima.itens||[]).length){card.style.display='none';return;}
-  card.style.display='block';
-  const itens=invUltima.itens.filter(i=>i.qtd!=null);
+// Pinta o inventário em qualquer container — usado no Dashboard e na aba Inventário
+function renderInv(inv, idInfo, idStats, idBarras){
+  const info=document.getElementById(idInfo);
+  const stats=document.getElementById(idStats);
+  const barras=document.getElementById(idBarras);
+  if(!barras)return;
+  if(!inv||!(inv.itens||[]).length){
+    if(info)info.textContent='Nenhuma contagem registrada ainda.';
+    if(stats)stats.innerHTML=''; barras.innerHTML=''; return;
+  }
+  const itens=inv.itens.filter(i=>i.qtd!=null);
   const abaixo=itens.filter(i=>i.min!=null&&i.qtd<i.min);
   const acima=itens.filter(i=>i.max!=null&&i.qtd>i.max);
-
-  document.getElementById('inv-dash-info').textContent=
-    `${fmtDate(invUltima.data)} · ${invUltima.responsavel||'—'} · Turno ${invUltima.turno||'—'}`;
-
-  document.getElementById('inv-dash-stats').innerHTML=`
+  if(info)info.textContent=`${fmtDate(inv.data)} · ${inv.responsavel||'—'} · Turno ${inv.turno||'—'}`;
+  if(stats)stats.innerHTML=`
     <div class="mini-stat"><div class="v">${itens.length}</div><div class="l">Itens contados</div></div>
-    <div class="mini-stat ${abaixo.length?'':'g'}" style="${abaixo.length?'border-left-color:var(--danger);':''}">
-      <div class="v" style="${abaixo.length?'color:var(--danger);':''}">${abaixo.length}</div><div class="l">Abaixo do mínimo</div></div>
+    <div class="mini-stat"${abaixo.length?' style="border-left-color:var(--danger);"':''}>
+      <div class="v"${abaixo.length?' style="color:var(--danger);"':''}>${abaixo.length}</div><div class="l">Abaixo do mínimo</div></div>
     <div class="mini-stat t"><div class="v">${acima.length}</div><div class="l">Acima do máximo</div></div>`;
 
-  // ordena: críticos primeiro, depois os demais
   const ordem=[...itens].sort((a,b)=>{
     const ca=a.min!=null&&a.qtd<a.min?0:1, cb=b.min!=null&&b.qtd<b.min?0:1;
     return ca!==cb?ca-cb:b.qtd-a.qtd;
   });
   const escala=Math.max(...ordem.map(i=>Math.max(i.qtd||0,i.max||0,i.min||0)),1);
-
-  document.getElementById('inv-dash-barras').innerHTML=ordem.map(i=>{
-    const crit=i.min!=null&&i.qtd<i.min;
-    const alto=i.max!=null&&i.qtd>i.max;
+  barras.innerHTML=ordem.map(i=>{
+    const crit=i.min!=null&&i.qtd<i.min, alto=i.max!=null&&i.qtd>i.max;
     const cor=crit?'var(--danger)':alto?'var(--orange)':'var(--teal)';
     const larg=Math.max(1,(i.qtd/escala)*100);
     const posMin=i.min!=null?(i.min/escala)*100:null;
-    return `<div style="display:grid;grid-template-columns:190px 1fr 52px;gap:10px;align-items:center;margin-bottom:7px;">
+    return `<div style="display:grid;grid-template-columns:minmax(150px,190px) 1fr 52px;gap:10px;align-items:center;margin-bottom:7px;">
       <div style="font-size:11px;font-weight:600;line-height:1.25;">${i.nome}</div>
       <div style="position:relative;background:var(--bg);border-radius:4px;height:17px;overflow:hidden;">
         <div style="height:100%;width:${larg}%;background:${cor};border-radius:4px;transition:width .4s;"></div>
@@ -1854,6 +1867,23 @@ function pintaDashInv(){
     </div>`;
   }).join('')+
   `<div style="font-size:10px;color:#7a8fa6;margin-top:10px;">A marca escura em cada barra indica o estoque mínimo.</div>`;
+}
+
+// Carrega a última contagem para o Dashboard — toda a liderança enxerga
+async function carregaInvDash(){
+  if(!db)return;
+  try{
+    const snap=await db.collection('inventarios').orderBy('data','desc').limit(1).get();
+    const inv=snap.empty?null:{id:snap.docs[0].id,...snap.docs[0].data()};
+    renderInv(inv,'dash-inv-info','dash-inv-stats','dash-inv-barras');
+  }catch(e){console.error(e);}
+}
+
+function pintaDashInv(){
+  const card=document.getElementById('inv-dash-card');
+  if(!invUltima||!(invUltima.itens||[]).length){card.style.display='none';return;}
+  card.style.display='block';
+  renderInv(invUltima,'inv-dash-info','inv-dash-stats','inv-dash-barras');
 }
 
 function checaItem(id){
@@ -1928,7 +1958,7 @@ async function salvarInv(){
   }catch(e){toast('Erro ao salvar: '+e.message,'danger');}
 }
 
-const SOF_GV=[["2026-08-18","07x13",3,7,[["07x08",[120,240,9],[90,180,6]],["08x09",[229,458,13],[126,252,7]],["09x10",[254,508,14],[153,306,10]],["10x11",[227,454,15],[234,468,13]],["11x12",[316,632,19],[215,430,14]],["12x13",[218,436,12],[154,308,9]]],[["SM",1],["EF",1],["SM",2],["RE",2],["AC",2],["AC",2],["AC",2],["EF",2],["EF",2],["AC",2],["AC",2]]],["2026-08-18","13x19",3,7,[["13x14",[69,138,6],[74,148,5]],["14x15",[142,284,8],[120,240,6]],["15x16",[174,348,10],[164,328,10]],["16x17",[104,208,6],[91,182,6]],["17x18",[100,200,6],[74,148,5]],["18x19",[71,142,5],[100,200,5]]],[["SM",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["OT",1],["AC",1],["SM",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["RE",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2]]],["2026-08-18","19x01",3,7,[["19x20",[94,188,6],[138,276,8]],["20x21",[174,348,10],[190,380,12]],["21x22",[202,404,12],[165,330,11]],["22x23",[157,314,10],[194,388,11]],["23x00",[194,388,11],[209,418,11]],["00x01",[198,396,11],[180,360,10]]],[["SM",1],["VC",1],["RE",1],["RE",1],["AT",1],["SM",2]]],["2026-08-19","01x07",3,7,[["01x02",[156,312,9],[130,260,7]],["02x03",[185,370,12],[114,228,7]],["03x04",[154,308,9],[100,200,5]],["04x05",[80,160,4],[154,308,9]],["05x06",[164,328,10],[105,210,7]],["06x07",[105,210,8],[109,218,10]]],[["SM",1],["AC",1],["AC",1],["AC",1],["AC",1],["SH",1],["AC",1],["AC",1],["SM",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["SH",2],["AD",2]]],["2026-08-19","07x13",2,5,[["07x08",[152,304,8],[102,204,6]],["08x09",[266,532,15],[149,298,3]],["09x10",[185,370,13],[166,332,11]],["10x11",[234,468,13],[164,328,12]],["11x12",[184,368,10],[83,166,6]],["12x13",[185,370,13],[162,324,9]]],[["SM",1],["EF",1],["SM",2],["AC",2],["AC",2],["OT",2]]],["2026-08-19","13x19",2,6,[["13x14",[174,348,10],[154,308,9]],["14x15",[174,348,9],[224,448,13]],["15x16",[191,382,10],[225,450,14]],["16x17",[194,388,12],[154,308,9]],["17x18",[194,388,11],[170,340,10]],["18x19",[139,278,9],[149,298,10]]],[["SM",1],["AC",1],["AC",1],["AC",1],["SM",2],["RE",2],["AC",2],["AC",2],["AC",2],["AC",2]]],["2026-08-19","19x01",2,6,[["19x20",[130,260,8],[90,180,5]],["20x21",[184,368,11],[174,348,10]],["21x22",[140,280,7],[190,380,11]],["22x23",[166,332,11],[157,314,10]],["23x00",[215,430,13],[184,368,11]],["00x01",[148,296,9],[172,344,9]]],[["SM",1],["EF",1],["SM",2],["EF",2],["AD",2],["AD",2],["OT",2]]],["2026-08-20","01x07",1,6,[["01x02",[0,0,0],[84,168,5]],["02x03",[30,60,4],[175,350,12]],["03x04",[121,242,7],[204,408,11]],["04x05",[50,100,5],[204,408,11]],["05x06",[81,162,5],[205,410,14]],["06x07",[20,40,1],[174,348,10]]],[["OH",1],["OT",1],["OH",1],["PA",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AD",1],["SM",2]]],["2026-08-20","07x13",1,6,[["07x08",[89,178,3],[184,368,10]],["08x09",[185,370,12],[203,406,13]],["09x10",[221,442,12],[194,388,11]],["10x11",[100,200,5],[182,364,10]]],[["SM",1],["VC",1],["AD",1],["SM",2],["VC",2]]]];
+const SOF_GV=[["2026-08-18","07x13",3,7,[["07x08",[120,240,9],[90,180,6],3,7],["08x09",[229,458,13],[126,252,7],3,7],["09x10",[254,508,14],[153,306,10],3,7],["10x11",[227,454,15],[234,468,13],3,7],["11x12",[316,632,19],[215,430,14],3,7],["12x13",[218,436,12],[154,308,9],3,7]],[["SM",1],["EF",1],["SM",2],["RE",2],["AC",2],["AC",2],["AC",2],["EF",2],["EF",2],["AC",2],["AC",2]]],["2026-08-18","13x19",3,7,[["13x14",[69,138,6],[74,148,5],3,7],["14x15",[142,284,8],[120,240,6],3,7],["15x16",[174,348,10],[164,328,10],3,7],["16x17",[104,208,6],[91,182,6],3,7],["17x18",[100,200,6],[74,148,5],3,7],["18x19",[71,142,5],[100,200,5],3,7]],[["SM",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["OT",1],["AC",1],["SM",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["RE",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2]]],["2026-08-18","19x01",3,7,[["19x20",[94,188,6],[138,276,8],3,7],["20x21",[174,348,10],[190,380,12],3,7],["21x22",[202,404,12],[165,330,11],3,7],["22x23",[157,314,10],[194,388,11],3,7],["23x00",[194,388,11],[209,418,11],3,7],["00x01",[198,396,11],[180,360,10],3,7]],[["SM",1],["VC",1],["RE",1],["RE",1],["AT",1],["SM",2]]],["2026-08-19","01x07",3,7,[["01x02",[156,312,9],[130,260,7],3,7],["02x03",[185,370,12],[114,228,7],3,7],["03x04",[154,308,9],[100,200,5],3,7],["04x05",[80,160,4],[154,308,9],3,6],["05x06",[164,328,10],[105,210,7],2,6],["06x07",[105,210,8],[109,218,10],2,6]],[["SM",1],["AC",1],["AC",1],["AC",1],["AC",1],["SH",1],["AC",1],["AC",1],["SM",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["SH",2],["AD",2]]],["2026-08-19","07x13",2,5,[["07x08",[152,304,8],[102,204,6],2,5],["08x09",[266,532,15],[149,298,3],2,5],["09x10",[185,370,13],[166,332,11],2,5],["10x11",[234,468,13],[164,328,12],2,5],["11x12",[184,368,10],[83,166,6],2,5],["12x13",[185,370,13],[162,324,9],2,5]],[["SM",1],["EF",1],["SM",2],["AC",2],["AC",2],["OT",2]]],["2026-08-19","13x19",2,6,[["13x14",[174,348,10],[154,308,9],2,6],["14x15",[174,348,9],[224,448,13],2,6],["15x16",[191,382,10],[225,450,14],2,6],["16x17",[194,388,12],[154,308,9],2,6],["17x18",[194,388,11],[170,340,10],2,6],["18x19",[139,278,9],[149,298,10],2,6]],[["SM",1],["AC",1],["AC",1],["AC",1],["SM",2],["RE",2],["AC",2],["AC",2],["AC",2],["AC",2]]],["2026-08-19","19x01",2,6,[["19x20",[130,260,8],[90,180,5],2,6],["20x21",[184,368,11],[174,348,10],2,6],["21x22",[140,280,7],[190,380,11],2,6],["22x23",[166,332,11],[157,314,10],2,6],["23x00",[215,430,13],[184,368,11],2,6],["00x01",[148,296,9],[172,344,9],2,6]],[["SM",1],["EF",1],["SM",2],["EF",2],["AD",2],["AD",2],["OT",2]]],["2026-08-20","01x07",1,6,[["01x02",[0,0,0],[84,168,5],1,6],["02x03",[30,60,4],[175,350,12],1,6],["03x04",[121,242,7],[204,408,11],1,6],["04x05",[50,100,5],[204,408,11],1,6],["05x06",[81,162,5],[205,410,14],1,6],["06x07",[20,40,1],[174,348,10],1,6]],[["OH",1],["OT",1],["OH",1],["PA",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AD",1],["SM",2]]],["2026-08-20","07x13",1,6,[["07x08",[89,178,3],[184,368,10],1,6],["08x09",[185,370,12],[203,406,13],1,6],["09x10",[221,442,12],[194,388,11],1,6],["10x11",[100,200,5],[182,364,10],1,6]],[["SM",1],["VC",1],["AD",1],["SM",2],["VC",2]]]];
 
 // ══════════════════════════════════════════════════════════
 //  CARGA DEMO / LIMPAR HISTÓRICO  —  restrito
@@ -2056,14 +2086,14 @@ async function cargaDemo(){
     // ── 2b. Embarque hora a hora: dados REAIS do Green Vitória (folhas 18 a 20/08) ──
     SOF_GV.forEach(([data,periodo,p1,p2,linhas,pars])=>{
       const pIdx=PER_LABELS.indexOf(periodo);
-      linhas.forEach(([hora,t1,t2],li)=>{
+      linhas.forEach(([hora,t1,t2,pa,pb],li)=>{
         const par=pars.filter(x=>x[1]===1||x[1]===2)[li];
         lote.push({col:'embarque_horas',doc:{
           navioId:navRef.id, navio:'GREEN VITORIA', berco:32,
           data, periodo, periodoIdx:pIdx, hora, produto:'Atados de Celulose',
           ternos:[
-            {terno:1,porao:p1,atados:t1[0],ton:t1[1],carretas:t1[2]},
-            {terno:2,porao:p2,atados:t2[0],ton:t2[1],carretas:t2[2]}
+            {terno:1,porao:pa||p1,atados:t1[0],ton:t1[1],carretas:t1[2]},
+            {terno:2,porao:pb||p2,atados:t2[0],ton:t2[1],carretas:t2[2]}
           ],
           somaTon:t1[1]+t2[1], somaAtados:t1[0]+t2[0], somaCarretas:t1[2]+t2[2],
           paralisacao: par?{sigla:par[0],motivo:PARALISACOES[par[0]]||'',obs:'',terno:par[1]}:null,
@@ -2158,7 +2188,6 @@ function aplicarEscopo(){
   const tabs=['dash','embh','hist','manut','maqhist','turnos','auxind','opind','inv'];
   document.querySelectorAll('#kpi-nav .tab').forEach((el,i)=>{
     let oculta=(tabs[i]==='auxind'||tabs[i]==='opind')&&!podeGente;
-    if(tabs[i]==='inv'&&!podeInventariar())oculta=true;
     el.style.display=oculta?'none':'';
   });
 }
@@ -2172,10 +2201,7 @@ function showKTab(t){
   document.querySelectorAll('#kpi-nav .tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
   if(t==='dash')setTimeout(()=>loadKPI(),50);
   if(t==='embh')loadEmbh();
-  if(t==='inv'){
-    if(!podeInventariar()){toast('Inventário é lançado por controlador ou assistente.','danger');return;}
-    loadInv();
-  }
+  if(t==='inv')loadInv();
   if(t==='hist')loadHist();
   if(t==='manut')loadManut();
   if(t==='maqhist')loadMaqHist();
@@ -2207,6 +2233,8 @@ async function loadKPI(){
     <div class="sc g"><div class="val">${tabT}</div><div class="lbl">Tablets</div></div>
     <div class="sc o"><div class="val">${tpaT}</div><div class="lbl">TPA's</div></div>
     <div class="sc"><div class="val">${empSet.size}</div><div class="lbl">Empilhadeiras em uso</div></div>`;
+  carregaInvDash();
+
   // Chart Atividades por período
   const perCount={'07×13':{},'13×19':{},'19×01':{},'01×07':{}};
   docs.forEach(d=>{const p=d.periodo||'—';if(!perCount[p])perCount[p]={};perCount[p][d.atividade]=(perCount[p][d.atividade]||0)+1;});
