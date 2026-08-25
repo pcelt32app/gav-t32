@@ -321,7 +321,7 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
         <div class="fgrp"><label>Auxiliares da casa *</label><input type="number" min="0" max="20" id="ef-aux-casa" placeholder="Ex: 2"></div>
         <div class="fgrp"><label>Operadores da casa</label><input type="number" min="0" max="20" id="ef-op-casa" placeholder="Ex: 1"></div>
         <div class="fgrp"><label>Trabalhadores OGMO</label><input type="number" min="0" max="20" id="ef-ogmo" placeholder="Ex: 2"></div>
-        <div class="fgrp"><label>Operadores terceiros</label><input type="number" min="0" max="20" id="ef-terc" placeholder="Ex: 0"></div>
+
       </div>
       <div id="ef-total" style="font-size:12px;font-weight:700;color:var(--blue);margin:2px 0 14px;"></div>
       <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;">Horário da frente</p>
@@ -1044,14 +1044,14 @@ function calcReceb(){
 
 function efetivoObj(){
   const n=id=>parseInt(document.getElementById(id).value||0)||0;
-  const auxCasa=n('ef-aux-casa'), opCasa=n('ef-op-casa'), ogmo=n('ef-ogmo'), terc=n('ef-terc');
+  const auxCasa=n('ef-aux-casa'), opCasa=n('ef-op-casa'), ogmo=n('ef-ogmo'), terc=0;
   return {auxCasa,opCasa,ogmo,terc,casa:auxCasa+opCasa,externo:ogmo+terc,total:auxCasa+opCasa+ogmo+terc};
 }
 function calcEfetivo(){
   const e=efetivoObj(), el=document.getElementById('ef-total');
   el.textContent = e.total>0 ? `Total na frente: ${e.total} — ${e.casa} da casa · ${e.externo} externos` : '';
 }
-['ef-aux-casa','ef-op-casa','ef-ogmo','ef-terc'].forEach(id=>{
+['ef-aux-casa','ef-op-casa','ef-ogmo'].forEach(id=>{
   document.addEventListener('DOMContentLoaded',()=>{
     const el=document.getElementById(id); if(el)el.addEventListener('input',calcEfetivo);
   });
@@ -1613,6 +1613,7 @@ async function loadEmbh(){
   if(!dt.value)dt.value=today();
   const per=document.getElementById('eh-periodo');
   if(!per.dataset.init){per.value=PER_LABELS[curPeriodo()];per.dataset.init='1';per.onchange=montaHoras;}
+  if(!dt.dataset.init){dt.dataset.init='1';dt.onchange=repintaGrade;}
   document.getElementById('eh-produto').value=navioAtual.produto||'';
   const sig=document.getElementById('eh-par-sigla');
   if(!sig.dataset.init){
@@ -1702,16 +1703,23 @@ async function salvarHora(){
 function escutaHoras(){
   if(!db||!navioAtual)return;
   if(embhUnsub){embhUnsub();embhUnsub=null;}
-  const dia=document.getElementById('eh-data').value||today();
   try{
     embhUnsub=db.collection('embarque_horas')
       .where('navioId','==',navioAtual.id)
       .onSnapshot(snap=>{
         const todas=snap.docs.map(d=>({id:d.id,...d.data()}));
+        window._embhTodas=todas;
         pintaSaldoNavio(todas);
-        pintaGrade(todas.filter(h=>h.data===dia&&h.periodo===document.getElementById('eh-periodo').value));
+        repintaGrade();
       },e=>console.error(e));
   }catch(e){console.error(e);}
+}
+
+function repintaGrade(){
+  const todas=window._embhTodas||[];
+  const dia=document.getElementById('eh-data').value||today();
+  const per=document.getElementById('eh-periodo').value;
+  pintaGrade(todas.filter(h=>h.data===dia&&h.periodo===per));
 }
 
 function pintaSaldoNavio(todas){
@@ -1964,12 +1972,13 @@ async function cargaDemo(){
     const poroesAtivos=Object.keys(poroes).map(Number);
 
     // ── 2. 15 dias de operação ──
-    for(let d=15;d>=1;d--){
+    for(let d=15;d>=0;d--){   // inclui hoje
       const data=diasAtras(d);
       const esc=APP_DATA.escala[data];
       if(!esc)continue;
 
       for(let pi=0;pi<4;pi++){
+        if(d===0&&pi>curPeriodo())continue;   // hoje: só até o período corrente
         const turno=esc[pi];
         const periodo=PER_LABELS[pi];
         const auxTurno=APP_DATA.auxiliares.filter(a=>a.turno===turno);
