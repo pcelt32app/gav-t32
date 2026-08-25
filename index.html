@@ -622,7 +622,7 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
       <div class="mini-dash" id="dash-inv-stats"></div>
       <div id="dash-inv-barras" style="margin-top:16px;"></div>
     </div>
-    <div style="display:none;"><tbody id="kpi-tbody"></tbody><div id="kpi-loader"></div></div>
+    <table style="display:none;"><tbody id="kpi-tbody"></tbody></table><div id="kpi-loader" style="display:none;"></div>
   </div>
 
   <!-- HISTÓRICO -->
@@ -1966,7 +1966,6 @@ const SOF_GV=[["2026-08-18","07x13",3,7,[["07x08",[120,240,9],[90,180,6],3,7],["
 const ADMIN_MATS=[459478,451499];          // Stefani e Pedro
 function ehAdmin(){
   if(!currentLider)return false;
-  if(currentLider.funcao==='COORDENADOR')return true;
   return ADMIN_MATS.includes(parseInt(currentLider.mat));
 }
 function pintaBotoesAdmin(){
