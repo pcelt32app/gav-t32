@@ -181,6 +181,52 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
 .divider{display:flex;align-items:center;gap:9px;margin:12px 0;}
 .divider span{font-size:11px;color:#aab4be;font-weight:600;}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:#e0e6ed;}
+
+/* hora a hora e efetivo por lista */
+.hh-tit{font-size:10px;font-weight:700;color:#7a8fa6;margin:12px 0 7px;text-transform:uppercase;letter-spacing:.4px;}
+.hh-lin{display:grid;gap:6px;align-items:center;margin-bottom:5px;}
+.hh-lin .hh-h{font-size:11px;font-weight:800;color:var(--dark);text-align:center;}
+.hh-lin input{padding:7px 6px;font-size:12px;font-weight:700;text-align:center;border:1.5px solid var(--border);border-radius:6px;width:100%;}
+.hh-lin.tem input{border-color:var(--teal);}
+.hh-cab{display:grid;gap:6px;margin-bottom:4px;}
+.hh-cab span{font-size:8.5px;font-weight:800;color:#7a8fa6;text-transform:uppercase;letter-spacing:.04em;text-align:center;}
+.hh-tot{background:rgba(3,135,153,.09);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;font-weight:800;color:var(--teal);}
+.chk-linha{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;cursor:pointer;padding:8px 0;}
+.chk-linha input{width:17px;height:17px;}
+.sub-rot{font-size:9px;font-weight:800;color:#7a8fa6;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.lnk{background:none;border:none;color:var(--teal);font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;padding:6px 0;text-decoration:underline;}
+
+/* contagem do armazém */
+.cont-cab{display:grid;grid-template-columns:1fr 88px 96px;gap:7px;margin-bottom:4px;}
+.cont-cab span{font-size:8.5px;font-weight:800;color:#7a8fa6;text-transform:uppercase;letter-spacing:.04em;}
+.cont-lin{display:grid;grid-template-columns:1fr 88px 96px;gap:7px;align-items:center;margin-bottom:4px;padding:3px 6px;border-radius:6px;}
+.cont-lin.estouro{background:rgba(217,83,79,.10);}
+.cont-lin .cn{font-size:11.5px;font-weight:700;display:flex;align-items:baseline;gap:6px;}
+.cont-lin .cn span{font-size:8.5px;color:#7a8fa6;font-weight:600;}
+.cont-lin input{padding:6px;font-size:11.5px;font-weight:700;text-align:center;border:1.5px solid var(--border);border-radius:6px;width:100%;}
+/* mapa */
+.mp-cab{font-size:12px;color:#7a8fa6;font-weight:600;margin-bottom:12px;}
+.mp-lado{font-size:9.5px;font-weight:800;color:#7a8fa6;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 5px;}
+.mp-fila{display:flex;gap:3px;align-items:stretch;}
+.mp-cel{position:relative;border:1.5px solid var(--border);border-radius:5px;overflow:hidden;background:#fcfdfe;
+        min-width:28px;height:104px;display:flex;flex-direction:column;justify-content:flex-end;}
+.mp-rua{background:repeating-linear-gradient(180deg,#fff,#fff 6px,#f4f7fa 6px,#f4f7fa 12px);border-style:dashed;}
+.mp-porta{background:#f7f9fb;}
+.mp-avaria{background:repeating-linear-gradient(45deg,#fff6f6,#fff6f6 5px,#ffe9e9 5px,#ffe9e9 10px);border-color:rgba(217,83,79,.35);}
+.mp-segr{background:repeating-linear-gradient(45deg,#fffaf0,#fffaf0 5px,#ffeed4 5px,#ffeed4 10px);border-color:rgba(232,132,26,.4);}
+.mp-fill{position:absolute;bottom:19px;left:0;width:100%;display:flex;flex-direction:column;justify-content:flex-end;}
+.mp-faixa{display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;}
+.mp-fx{font-size:7px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.55);line-height:1.2;text-align:center;}
+.mp-fx b{font-size:8px;}
+.mp-topo{position:absolute;top:3px;left:50%;transform:translateX(-50%);z-index:5;font-size:9px;font-weight:800;
+         background:rgba(255,255,255,.93);border-radius:4px;padding:1px 5px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.mp-rot{position:absolute;bottom:0;left:0;width:100%;height:19px;z-index:4;display:flex;align-items:center;justify-content:center;gap:4px;
+        background:#fff;border-top:1px solid var(--border);}
+.mp-n{font-size:9px;font-weight:800;}
+.mp-cap{font-size:7px;color:#7a8fa6;font-weight:600;}
+.mp-leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:10px;color:#7a8fa6;font-weight:600;}
+.mp-leg span{display:flex;align-items:center;gap:5px;}
+.mp-leg i{width:12px;height:12px;border-radius:3px;display:inline-block;}
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:10000;}
 .modal-box{background:#fff;border-radius:16px;padding:28px;max-width:440px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);}
@@ -219,6 +265,16 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
 
 <!-- FIREBASE MODAL -->
 <!-- ══ CADASTRO DO NAVIO ══ -->
+<div class="modal-overlay" id="mapa-modal" style="display:none;">
+  <div class="modal-box" style="max-width:1300px;width:97%;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;">
+      <h3 style="margin:0;">🗺️ Mapa do Armazém — T32</h3>
+      <button class="btn btn-sec btn-sm" onclick="document.getElementById('mapa-modal').style.display='none'">Fechar</button>
+    </div>
+    <div id="mapa-corpo"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="nav-modal" style="display:none;">
   <div class="modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto;">
     <h3>⚓ Navio em Operação</h3>
@@ -317,11 +373,19 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
       <h3><div class="icon it">👷</div>Frente de Trabalho</h3>
       <p style="font-size:12px;color:#7a8fa6;margin-bottom:14px;">Quem está nesta frente e desde quando.</p>
       <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;">Efetivo</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
-        <div class="fgrp"><label>Auxiliares da casa *</label><input type="number" min="0" max="20" id="ef-aux-casa" placeholder="Ex: 2"></div>
+      <label class="chk-linha"><input type="checkbox" id="ef-mais" onchange="togMaisAux()"> Mais de um auxiliar neste trabalho?</label>
+      <div id="ef-lista-box" style="display:none;margin:8px 0 4px;">
+        <p class="sub-rot">Do turno de serviço</p>
+        <div class="chips" id="ef-lista-turno"></div>
+        <button type="button" class="lnk" id="ef-btn-fte" onclick="togFte()">+ auxiliar de outro turno (FTE)</button>
+        <div id="ef-lista-fte" style="display:none;margin-top:7px;">
+          <p class="sub-rot">De outro turno</p>
+          <div class="chips" id="ef-chips-fte"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:8px;">
         <div class="fgrp"><label>Operadores da casa</label><input type="number" min="0" max="20" id="ef-op-casa" placeholder="Ex: 1"></div>
         <div class="fgrp"><label>Trabalhadores OGMO</label><input type="number" min="0" max="20" id="ef-ogmo" placeholder="Ex: 2"></div>
-
       </div>
       <div id="ef-total" style="font-size:12px;font-weight:700;color:var(--blue);margin:2px 0 14px;"></div>
       <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;">Horário da frente</p>
@@ -342,16 +406,30 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
         </div></div>
       </div>
       <div class="atv-sec" id="as-recebimento"><div class="atv-hdr" onclick="selAtv('recebimento')"><input type="radio" name="atv" value="recebimento" id="r-recebimento"><span>🚛 Recebimento</span></div>
-        <div class="atv-body"><p style="font-size:10px;font-weight:700;color:#7a8fa6;margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;">Tipo *</p>
-          <div class="chips" id="receb-chips"><label class="chip"><input type="radio" name="receb-tipo" value="Ferro" onchange="togReceb()"> Ferro</label><label class="chip"><input type="radio" name="receb-tipo" value="Rodo" onchange="togReceb()"> Rodo</label></div>
-          <div class="fgrp" id="receb-ferro-box" style="margin-top:9px;display:none;"><label>Vagões descarregados neste lançamento *</label><input type="text" inputmode="decimal" id="receb-vagoes" placeholder="Ex: 7,5" oninput="calcReceb()"></div>
-          <div class="fgrp" id="receb-rodo-box" style="margin-top:9px;display:none;"><label>Atados recebidos via carreta *</label><input type="text" inputmode="decimal" id="receb-atados" placeholder="Ex: 24" oninput="calcReceb()"></div>
-          <small id="receb-calc" style="display:block;margin-top:-4px;font-size:11px;font-weight:700;color:var(--teal);"></small>
+        <div class="atv-body">
+          <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;">Tipo *</p>
+          <div class="chips" id="receb-chips">
+            <label class="chip"><input type="radio" name="receb-tipo" value="Ferro" onchange="togReceb()"> Ferro</label>
+            <label class="chip"><input type="radio" name="receb-tipo" value="Rodo" onchange="togReceb()"> Rodo</label>
+          </div>
+
+          <div id="receb-ferro-box" style="display:none;margin-top:11px;">
+            <p class="hh-tit">Vagões descarregados por hora</p>
+            <div id="hh-ferro"></div>
+          </div>
+
+          <div id="receb-rodo-box" style="display:none;margin-top:11px;">
+            <p class="hh-tit">Recebimento rodoviário por hora</p>
+            <div class="fgrp" style="max-width:200px;"><label>SKU *</label><input type="text" id="receb-sku" placeholder="Ex: RSP-EP"></div>
+            <div id="hh-rodo"></div>
+          </div>
+
+          <div id="receb-calc" class="hh-tot"></div>
         </div>
       </div>
       <div class="atv-sec" id="as-armazenagem"><div class="atv-hdr" onclick="selAtv('armazenagem')"><input type="radio" name="atv" value="armazenagem" id="r-armazenagem"><span>🏗️ Armazenagem</span></div>
         <div class="atv-body"><div class="fgrp" style="margin-top:6px;"><label>Vãos *</label><input type="text" id="arm-vaos" placeholder="Ex: V1, V2, V3"></div>
-          <div class="fgrp"><label>Toneladas armazenadas neste lançamento *</label><input type="text" inputmode="decimal" id="arm-ton" placeholder="Ex: 540"></div></div>
+          <div class="fgrp"><label>Atados armazenados neste lançamento *</label><input type="text" inputmode="decimal" id="arm-ton" placeholder="Ex: 270" oninput="calcArm()"><small id="arm-calc" style="display:block;margin-top:5px;font-size:11px;font-weight:700;color:var(--teal);"></small></div></div>
       </div>
       <div class="atv-sec" id="as-limpeza"><div class="atv-hdr" onclick="selAtv('limpeza')"><input type="radio" name="atv" value="limpeza" id="r-limpeza"><span>🧹 Limpeza e Organização</span></div>
         <div class="atv-body"><div class="fgrp" style="margin-top:6px;"><label>Vãos *</label><input type="text" id="limp-vaos" placeholder="Ex: V4, V5"></div></div>
@@ -365,14 +443,16 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
           </div></div>
       </div>
       <div class="atv-sec" id="as-avarias"><div class="atv-hdr" onclick="selAtv('avarias')"><input type="radio" name="atv" value="avarias" id="r-avarias"><span>⚠️ Avarias</span></div>
-        <div class="atv-body"><div class="fgrp" style="margin-top:6px;"><label>Placas de Carretas *</label><input type="text" id="avar-placas" placeholder="Ex: ABC1234, DEF5678"></div>
-          <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin:12px 0 7px;text-transform:uppercase;letter-spacing:.4px;">Tonelagem avariada por produto *</p>
-          <div id="avar-prod-list"></div>
-          <div style="display:grid;grid-template-columns:1.4fr 1fr auto;gap:7px;align-items:end;">
-            <div class="fgrp" style="margin:0;"><label>Produto</label><input type="text" id="avar-prod" placeholder="Ex: TSP-EP"></div>
-            <div class="fgrp" style="margin:0;"><label>Toneladas</label><input type="text" inputmode="decimal" id="avar-prod-ton" placeholder="32"></div>
-            <button type="button" class="btn btn-sec" style="height:38px;" onclick="addAvarProd()">＋</button>
-          </div></div>
+        <div class="atv-body">
+          <div class="fgrp" style="margin-top:6px;"><label>Placas de Carretas *</label><input type="text" id="avar-placas" placeholder="Ex: ABC1234, DEF5678"></div>
+          <p class="hh-tit">Carregamento de avarias por hora</p>
+          <div id="hh-avaria"></div>
+          <div id="avar-calc" class="hh-tot"></div>
+        </div>
+      </div>
+
+      <div class="atv-sec" id="as-outros"><div class="atv-hdr" onclick="selAtv('outros')"><input type="radio" name="atv" value="outros" id="r-outros"><span>📌 Outros</span></div>
+        <div class="atv-body"><div class="fgrp" style="margin-top:6px;"><label>Descreva a atividade *</label><input type="text" id="outros-desc" maxlength="90" placeholder="Ex: acompanhamento de visita técnica"></div></div>
       </div>
     </div>
     <div class="flex-end"><button class="btn btn-teal" onclick="tryTab('recursos')">Próximo: Recursos →</button></div>
@@ -512,11 +592,79 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
     <div class="tab" onclick="showKTab('turnos')">🔄 Por Turno</div>
     <div class="tab" onclick="showKTab('auxind')">👷 Auxiliares</div>
     <div class="tab" onclick="showKTab('opind')">🦺 Operadores</div>
+    <div class="tab" onclick="showKTab('ret')">🗂️ Retaguarda</div>
     <div class="tab" onclick="showKTab('inv')">📦 Inventário</div>
     <div class="tab" onclick="goForm()">➕ Registro</div>
   </div>
 
   <!-- DASHBOARD -->
+  <!-- ══ RETAGUARDA ══ -->
+  <div id="kt-ret" style="display:none;">
+
+    <!-- Programações -->
+    <div class="card">
+      <h3><div class="icon ib">📋</div>Programações do Turno</h3>
+      <p style="font-size:12px;color:#7a8fa6;margin-bottom:12px;">O que está programado. O avanço vem dos lançamentos dos auxiliares.</p>
+      <div id="prog-abertas"></div>
+      <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
+        <p class="sub-rot">Nova programação</p>
+        <div class="chips" id="prog-tipo">
+          <label class="chip"><input type="radio" name="prog-t" value="ferro" onchange="togProg()"> Ferro</label>
+          <label class="chip"><input type="radio" name="prog-t" value="rodo" onchange="togProg()"> Rodo</label>
+          <label class="chip"><input type="radio" name="prog-t" value="avaria" onchange="togProg()"> Avaria</label>
+        </div>
+        <div id="prog-ferro" style="display:none;margin-top:9px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+            <div class="fgrp"><label>Prefixo *</label><input type="text" id="pg-prefixo" placeholder="L34" style="text-transform:uppercase;"></div>
+            <div class="fgrp"><label>Vagões programados *</label><input type="text" inputmode="numeric" id="pg-vagoes" placeholder="64"></div>
+          </div>
+        </div>
+        <div id="prog-rodo" style="display:none;margin-top:9px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;">
+            <div class="fgrp"><label>Carretas *</label><input type="text" inputmode="numeric" id="pg-carretas" placeholder="20"></div>
+            <div class="fgrp"><label>Toneladas *</label><input type="text" inputmode="decimal" id="pg-ton" placeholder="560"></div>
+            <div class="fgrp"><label>SKU *</label><input type="text" id="pg-sku" placeholder="RSP-EP" style="text-transform:uppercase;"></div>
+          </div>
+        </div>
+        <div id="prog-avaria" style="display:none;margin-top:9px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;">
+            <div class="fgrp"><label>Carretas *</label><input type="text" inputmode="numeric" id="pa-carretas" placeholder="3"></div>
+            <div class="fgrp"><label>Toneladas *</label><input type="text" inputmode="decimal" id="pa-ton" placeholder="60"></div>
+            <div class="fgrp"><label>SKU *</label><input type="text" id="pa-sku" placeholder="TSP-EP" style="text-transform:uppercase;"></div>
+          </div>
+        </div>
+        <div class="flex-end"><button class="btn btn-primary btn-sm" onclick="salvarProg()">＋ Abrir programação</button></div>
+      </div>
+    </div>
+
+    <!-- Estoque por hora -->
+    <div class="card">
+      <h3><div class="icon it">📦</div>Estoque do Armazém — por hora</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;">
+        <div class="fgrp"><label>Hora</label><select id="est-hora"></select></div>
+        <div class="fgrp"><label>Atados — geral *</label><input type="text" inputmode="numeric" id="est-geral" placeholder="4.842" oninput="calcEstoque()"></div>
+        <div class="fgrp"><label>Atados — avaria</label><input type="text" inputmode="numeric" id="est-avaria" placeholder="34" oninput="calcEstoque()"></div>
+      </div>
+      <div id="est-calc" class="hh-tot"></div>
+      <div class="flex-end" style="margin-top:10px;"><button class="btn btn-primary btn-sm" onclick="salvarEstoque()">💾 Lançar hora</button></div>
+      <div id="est-hist" style="margin-top:14px;"></div>
+    </div>
+
+    <!-- Contagem do armazém -->
+    <div class="card">
+      <h3><div class="icon ig">🗺️</div>Contagem do Armazém — fim do turno</h3>
+      <p style="font-size:12px;color:#7a8fa6;margin-bottom:12px;">Preencha atados e SKU de cada ponto. Deixe em branco o que estiver vazio.</p>
+      <div id="cont-lista"></div>
+      <div id="cont-resumo" class="hh-tot"></div>
+      <div id="cont-diverg" style="display:none;border-radius:8px;padding:11px 13px;margin-top:9px;font-size:12px;font-weight:700;"></div>
+      <div class="flex-end" style="margin-top:12px;gap:8px;">
+        <button class="btn btn-sec btn-sm" onclick="verMapa()">🗺️ Ver mapa</button>
+        <button class="btn btn-sec btn-sm" onclick="copiarContagem()">📋 Copiar p/ WhatsApp</button>
+        <button class="btn btn-primary btn-sm" onclick="salvarContagem()">💾 Salvar contagem</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ INVENTÁRIO DE MATERIAIS ══ -->
   <div id="kt-inv" style="display:none;">
     <div class="card" id="inv-form-card">
@@ -972,7 +1120,6 @@ function validateAtv(){
   const reqNum=id=>{const el=document.getElementById(id);const v=parseFloat(String(el.value).replace(',','.'));if(isNaN(v)||v<0){el.classList.add('inv');ok=false;}else el.classList.remove('inv');};
 
   // frente de trabalho — vale para todas as atividades
-  reqNum('ef-aux-casa');
   req('fr-inicio');
 
   if(atv==='embarque'){
@@ -981,7 +1128,15 @@ function validateAtv(){
   }else if(atv==='recebimento'){
     const tipo=document.querySelector('input[name="receb-tipo"]:checked')?.value;
     if(!tipo){document.getElementById('receb-chips').classList.add('inv');ok=false;}
-    else{document.getElementById('receb-chips').classList.remove('inv');reqNum(tipo==='Ferro'?'receb-vagoes':'receb-atados');}
+    else{
+      document.getElementById('receb-chips').classList.remove('inv');
+      if(tipo==='Ferro'){
+        if(!lerHH('ferro',[{k:'vg'}]).length){toast('Lance ao menos uma hora com vagões.','danger');return false;}
+      }else{
+        req('receb-sku');
+        if(!lerHH('rodo',[{k:'car'},{k:'at'}]).length){toast('Lance ao menos uma hora com carretas e atados.','danger');return false;}
+      }
+    }
   }else if(atv==='armazenagem'){
     req('arm-vaos');reqNum('arm-ton');
   }else if(atv==='limpeza'){
@@ -991,12 +1146,20 @@ function validateAtv(){
     reqNum('abast-ps1');reqNum('abast-ps2');
   }else if(atv==='avarias'){
     req('avar-placas');
-    if(!avarProds.length){toast('Adicione ao menos um produto avariado com a tonelagem.','danger');return false;}
+    if(!lerHH('avaria',[{k:'at'}]).length){toast('Lance ao menos uma hora com atados de avaria.','danger');return false;}
+  }else if(atv==='outros'){
+    req('outros-desc');
   }
   if(!ok)toast('Preencha os campos obrigatórios.','danger');
   return ok;
 }
-function selAtv(id){document.querySelectorAll('.atv-sec').forEach(s=>s.classList.remove('sel'));document.getElementById('as-'+id).classList.add('sel');document.getElementById('r-'+id).checked=true;document.querySelectorAll('.inv').forEach(el=>el.classList.remove('inv'));}
+function selAtv(id){
+  document.querySelectorAll('.atv-sec').forEach(s=>s.classList.remove('sel'));
+  document.getElementById('as-'+id).classList.add('sel');
+  document.getElementById('r-'+id).checked=true;
+  document.querySelectorAll('.inv').forEach(el=>el.classList.remove('inv'));
+  if(id==='avarias')montaGradeAvaria();
+}
 
 // ══ CAMPOS NOVOS: produção, efetivo, horário da frente ══
 const TON_VAGAO=96;   // cada vagão = 96 t
@@ -1028,60 +1191,24 @@ function calcTonH(){
 }
 
 function togReceb(){
-  const tipo=document.querySelector('input[name="receb-tipo"]:checked')?.value;
-  document.getElementById('receb-ferro-box').style.display = tipo==='Ferro'?'block':'none';
-  document.getElementById('receb-rodo-box').style.display  = tipo==='Rodo' ?'block':'none';
-  calcReceb();
-}
-function recebTon(){
-  const tipo=document.querySelector('input[name="receb-tipo"]:checked')?.value;
-  if(tipo==='Ferro'){const v=nDec('receb-vagoes');return v!=null?{qtd:v,unidadeQtd:'vagões',ton:+(v*TON_VAGAO).toFixed(2)}:null;}
-  if(tipo==='Rodo'){const a=nDec('receb-atados');return a!=null?{qtd:a,unidadeQtd:'atados',ton:+(a*TON_ATADO).toFixed(2)}:null;}
-  return null;
-}
-function calcReceb(){
-  const r=recebTon(), el=document.getElementById('receb-calc');
-  el.textContent = r ? `${r.qtd} ${r.unidadeQtd} × ${r.unidadeQtd==='vagões'?TON_VAGAO:TON_ATADO} t = ${r.ton} toneladas` : '';
+  const t=document.querySelector('input[name="receb-tipo"]:checked')?.value;
+  document.getElementById('receb-ferro-box').style.display = t==='Ferro'?'block':'none';
+  document.getElementById('receb-rodo-box').style.display  = t==='Rodo' ?'block':'none';
+  if(t==='Ferro')montaGradeHH('hh-ferro',[{k:'vg',rot:'Vagões'}],'ferro');
+  if(t==='Rodo') montaGradeHH('hh-rodo',[{k:'car',rot:'Carretas'},{k:'at',rot:'Atados'}],'rodo');
+  document.getElementById('receb-calc').textContent='';
 }
 
-function efetivoObj(){
-  const n=id=>parseInt(document.getElementById(id).value||0)||0;
-  const auxCasa=n('ef-aux-casa'), opCasa=n('ef-op-casa'), ogmo=n('ef-ogmo'), terc=0;
-  return {auxCasa,opCasa,ogmo,terc,casa:auxCasa+opCasa,externo:ogmo+terc,total:auxCasa+opCasa+ogmo+terc};
-}
-function calcEfetivo(){
-  const e=efetivoObj(), el=document.getElementById('ef-total');
-  el.textContent = e.total>0 ? `Total na frente: ${e.total} — ${e.casa} da casa · ${e.externo} externos` : '';
-}
-['ef-aux-casa','ef-op-casa','ef-ogmo'].forEach(id=>{
+
+
+['ef-op-casa','ef-ogmo'].forEach(id=>{
   document.addEventListener('DOMContentLoaded',()=>{
     const el=document.getElementById(id); if(el)el.addEventListener('input',calcEfetivo);
   });
 });
 
-let avarProds=[];
-function addAvarProd(){
-  const p=document.getElementById('avar-prod').value.trim();
-  const t=nDec('avar-prod-ton')||0;
-  if(!p||!(t>0)){toast('Informe o produto e a tonelagem.','danger');return;}
-  avarProds.push({produto:p,ton:t});
-  document.getElementById('avar-prod').value='';
-  document.getElementById('avar-prod-ton').value='';
-  renderAvarProds();
-}
-function rmAvarProd(i){avarProds.splice(i,1);renderAvarProds();}
-function renderAvarProds(){
-  const box=document.getElementById('avar-prod-list');
-  if(!box)return;
-  box.innerHTML=avarProds.map((p,i)=>
-    `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border-radius:7px;padding:7px 11px;margin-bottom:6px;">
-       <span style="font-size:12px;font-weight:600;">${p.produto}</span>
-       <span style="font-size:12px;font-weight:800;color:var(--blue);">${p.ton} t</span>
-       <button type="button" onclick="rmAvarProd(${i})" style="border:none;background:none;color:var(--red);font-size:16px;cursor:pointer;line-height:1;">×</button>
-     </div>`).join('');
-  const tot=avarProds.reduce((s,p)=>s+p.ton,0);
-  if(avarProds.length)box.innerHTML+=`<div style="font-size:11px;font-weight:800;color:var(--teal);margin-bottom:8px;">Total avariado: ${tot.toFixed(2)} t</div>`;
-}
+
+
 
 // Compacta a foto antes de guardar: entra no próprio registro, sem Firebase Storage
 function comprimirFoto(file,maxLado=1000,qualidade=0.55){
@@ -1353,11 +1480,14 @@ async function salvarRegistro(){
   let detalhe='';
   switch(atv){
     case'embarque':detalhe=[document.getElementById('emb-terno').value,document.getElementById('emb-porta').value].filter(Boolean).join(' / ');break;
-    case'recebimento':detalhe=document.querySelector('input[name="receb-tipo"]:checked')?.value||'';break;
+    case'recebimento':{const tp=document.querySelector('input[name="receb-tipo"]:checked')?.value||'';
+      const sk=document.getElementById('receb-sku').value.trim().toUpperCase();
+      detalhe=tp+(tp==='Rodo'&&sk?' · '+sk:'');break;}
     case'armazenagem':detalhe='Vãos: '+document.getElementById('arm-vaos').value;break;
     case'limpeza':detalhe='Vãos: '+document.getElementById('limp-vaos').value;break;
     case'abastecimento':detalhe=[...document.querySelectorAll('#abast-chips input:checked')].map(i=>i.value).join(', ');break;
     case'avarias':detalhe=document.getElementById('avar-placas').value;break;
+    case'outros':detalhe=document.getElementById('outros-desc').value.trim();break;
   }
   const defAtivo=document.querySelector('input[name="defeito"]:checked')?.value==='sim';
   const defItens=[...document.querySelectorAll('#defeito-list > div')].map(row=>({desc:row.querySelector('span:nth-child(2)')?.textContent||'',item:row.querySelector('input[type=text]')?.value||''}));
@@ -1386,11 +1516,32 @@ async function salvarRegistro(){
   let producao={};
   switch(atv){
     case'embarque':{const tn=nDec('emb-ton');producao={unidade:'ton',valor:tn,tonHora:tn,horasFrente:horas?+horas.toFixed(2):null};break;}
-    case'recebimento':{const r=recebTon();producao={unidade:'ton',valor:r?r.ton:null,qtd:r?r.qtd:null,unidadeQtd:r?r.unidadeQtd:null,fator:r?(r.unidadeQtd==='vagões'?TON_VAGAO:TON_ATADO):null};break;}
-    case'armazenagem':producao={unidade:'ton',valor:nDec('arm-ton')};break;
-    case'limpeza':{const v=document.getElementById('limp-vaos').value.split(',').map(s=>s.trim()).filter(Boolean);producao={unidade:'vaos',valor:v.length,vaos:v};break;}
+    case'recebimento':{
+      const tipo=document.querySelector('input[name="receb-tipo"]:checked')?.value;
+      if(tipo==='Ferro'){
+        const l=lerHH('ferro',[{k:'vg'}]);
+        const vg=l.reduce((s,x)=>s+(x.vg||0),0);
+        producao={tipo:'Ferro',unidade:'ton',valor:+(vg*TON_VAGAO).toFixed(2),qtd:vg,unidadeQtd:'vagões',fator:TON_VAGAO,
+                  horas:l.map(x=>({hora:x.hora,vagoes:x.vg}))};
+      }else{
+        const l=lerHH('rodo',[{k:'car'},{k:'at'}]);
+        const car=l.reduce((s,x)=>s+(x.car||0),0), at=l.reduce((s,x)=>s+(x.at||0),0);
+        producao={tipo:'Rodo',unidade:'ton',valor:+(at*TON_ATADO).toFixed(2),qtd:at,unidadeQtd:'atados',fator:TON_ATADO,
+                  carretas:car, sku:document.getElementById('receb-sku').value.trim().toUpperCase(),
+                  horas:l.map(x=>({hora:x.hora,carretas:x.car,atados:x.at}))};
+      }
+      break;}
+    case'armazenagem':{const a=nDec('arm-ton');producao={unidade:'ton',valor:+(a*TON_ATADO).toFixed(2),qtd:a,unidadeQtd:'atados',fator:TON_ATADO};break;}
+    case'limpeza':{const v=document.getElementById('limp-vaos').value.split(',').map(x=>x.trim()).filter(Boolean);producao={unidade:'vaos',valor:v.length,vaos:v};break;}
     case'abastecimento':{const m=[...document.querySelectorAll('#abast-chips input:checked')].map(i=>i.value);producao={unidade:'maquinas',valor:m.length,maquinas:m,pitstops:[nDec('abast-ps1'),nDec('abast-ps2')]};break;}
-    case'avarias':producao={unidade:'ton',valor:+avarProds.reduce((s,p)=>s+p.ton,0).toFixed(2),produtos:avarProds.slice()};break;
+    case'avarias':{
+      const l=lerHH('avaria',[{k:'at'}]);
+      const at=l.reduce((s,x)=>s+(x.at||0),0);
+      const hs=l.map(x=>({hora:x.hora,atados:x.at,sku:(document.getElementById('avaria-sku-'+x.hora.replace('x',''))?.value||'').trim().toUpperCase()}));
+      producao={unidade:'ton',valor:+(at*TON_ATADO).toFixed(2),qtd:at,unidadeQtd:'atados',fator:TON_ATADO,horas:hs,
+                produtos:[...new Set(hs.map(h=>h.sku).filter(Boolean))]};
+      break;}
+    case'outros':producao={unidade:'—',valor:null,descricao:document.getElementById('outros-desc').value.trim()};break;
   }
 
   const rec={id:'reg_'+Date.now(),data:t,turno:tu,periodo:PER_LABELS[pi],periodoIdx:pi,matricula:currentUser.mat,colaborador:currentUser.nome,fte:!!currentUser.fte,turnoOrigem:currentUser.turnoOrigem||currentUser.turno,atividade:atv,detalhe,
@@ -1427,8 +1578,12 @@ function resetForm(){
   document.querySelectorAll('.maq-chip').forEach(c=>{c.classList.remove('selected');const p=c.dataset.tipo==='emp'?'🚜':'🏗️';c.innerHTML=`${p} ${c.dataset.maq}`;});
   const obsArea=document.getElementById('maq-obs-area');if(obsArea)obsArea.innerHTML='';
   maqSel={};fotoFiles=[];defFotos=[];fotoMaqMap={};recDone={};
-  avarProds=[];renderAvarProds();
-  ['emb-tonh','ef-total','receb-calc'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='';});
+  ['emb-tonh','ef-total','receb-calc','avar-calc','arm-calc'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='';});
+  auxSel=[];
+  const cm=document.getElementById('ef-mais'); if(cm)cm.checked=false;
+  const lb=document.getElementById('ef-lista-box'); if(lb)lb.style.display='none';
+  const lf=document.getElementById('ef-lista-fte'); if(lf)lf.style.display='none';
+  ['hh-ferro','hh-rodo','hh-avaria'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='';});
   ['receb-ferro-box','receb-rodo-box'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
   document.getElementById('tpa-detail').style.display='none';document.getElementById('tpa-box').classList.remove('show');
   document.getElementById('tpa-chips').innerHTML='';document.getElementById('tpa-list').innerHTML='';
@@ -2100,6 +2255,51 @@ async function cargaDemo(){
       });
     });
 
+    // ── 2c. Programações, estoque por hora e contagem do armazém ──
+    const hojeD=diasAtras(0), turnoHoje=APP_DATA.escala[hojeD]?.[curPeriodo()]||'A';
+    lote.push({col:'programacoes',doc:{tipo:'ferro',prefixo:'L34',vagoesProg:64,tonProg:64*96,
+      data:hojeD,turno:turnoHoje,periodo:PER_LABELS[curPeriodo()],aberta:true,
+      abertaPor:'MICHEL ALVES',criadoEm:new Date().toISOString(),demo:true}});
+    lote.push({col:'programacoes',doc:{tipo:'rodo',carretasProg:22,tonProg:616,sku:'RSP-EP',
+      data:hojeD,turno:turnoHoje,periodo:PER_LABELS[curPeriodo()],aberta:true,
+      abertaPor:'MICHEL ALVES',criadoEm:new Date().toISOString(),demo:true}});
+
+    // estoque por hora do dia, caindo conforme o embarque
+    let estoque=5160;
+    (HORAS_PERIODO[PER_LABELS[curPeriodo()]]||[]).forEach((h,i)=>{
+      if(i>new Date().getHours()%6)return;
+      estoque-=rnd(60,180);
+      lote.push({col:'estoque_horas',doc:{
+        data:hojeD, periodo:PER_LABELS[curPeriodo()], hora:h, turno:turnoHoje,
+        atadosGeral:estoque, atadosAvaria:34, tonGeral:estoque*2, tonAvaria:68,
+        total:estoque+34, tonTotal:(estoque+34)*2, lancadoPor:'MICHEL ALVES', demo:true}});
+    });
+
+    // contagem do armazém de ontem
+    const CAPD={V01:1618,V02:1334,V03:638,V04:578,V05:878,V06:522,V07:522,V08:462,
+      V09:792,V10:1596,V11:798,V12:1596,V13:1664,V14:1596,V15:798,V16:1596,
+      V17:1664,V18:798,V19:1664,V20:1596,V21:710,BUFFER:1920};
+    const SKUS=['RSP-EP','TSP-EP','RSP-PP','TSP-PP','HSH-EP','RSP-PR'];
+    const pts=[];
+    Object.entries(CAPD).forEach(([n,c])=>{
+      if(Math.random()<0.18)return;                    // alguns vãos vazios
+      if(n!=='BUFFER'&&Math.random()<0.18){            // vão com dois produtos
+        const a=Math.round(c*(0.3+Math.random()*0.3)), b=Math.round(c*(0.2+Math.random()*0.25));
+        pts.push({ponto:n,qtd:a,sku:'RSP-EP',cap:c});
+        pts.push({ponto:n,qtd:b,sku:pick(SKUS.slice(1)),cap:c});
+      }else{
+        pts.push({ponto:n,qtd:Math.round(c*(0.35+Math.random()*0.6)),sku:pick(SKUS),cap:c});
+      }
+    });
+    pts.push({ponto:'AVARIAS',qtd:27,sku:'RSP-EP',cap:0});
+    pts.push({ponto:'SEGREGADAS',qtd:64,sku:'TSP-EP',cap:0});
+    const totCont=pts.reduce((a,b)=>a+b.qtd,0);
+    lote.push({col:'contagens_armazem',doc:{
+      data:diasAtras(1), turno:'C', periodo:'19x01', responsavel:'MICHEL ALVES',
+      matricula:454264, funcao:'CONTROLADOR', pontos:pts,
+      totalAtados:totCont, totalTon:totCont*2,
+      estoqueLancado:totCont-rnd(20,90), divergencia:rnd(20,90), demo:true}});
+
     // ── 3. Inventário ──
     lote.push({col:'inventarios',doc:{
       data:diasAtras(13), responsavel:'STEFANI VIEIRA', matricula:459478,
@@ -2127,13 +2327,13 @@ async function cargaDemo(){
 
 async function limparHistorico(){
   if(!ehAdmin()||!db)return;
-  if(!confirm('APAGAR TODO O HISTÓRICO?\n\nRegistros, horas de embarque e navios serão excluídos.\nO inventário é preservado.\n\nEsta ação não pode ser desfeita.'))return;
+  if(!confirm('APAGAR TODO O HISTÓRICO?\n\nRegistros, embarque, navios, programações, estoque e contagens serão excluídos.\nO inventário é preservado.\n\nEsta ação não pode ser desfeita.'))return;
   if(!confirm('Confirma mesmo? Não há como recuperar.'))return;
   const btn=document.getElementById('btn-limpar');
   btn.disabled=true; btn.textContent='Apagando...';
   let n=0;
   try{
-    for(const col of ['registros','embarque_horas','navios']){
+    for(const col of ['registros','embarque_horas','navios','programacoes','estoque_horas','contagens_armazem']){
       while(true){
         const snap=await db.collection(col).limit(400).get();
         if(snap.empty)break;
@@ -2152,6 +2352,485 @@ async function limparHistorico(){
   }finally{
     btn.disabled=false; btn.textContent='🗑 LIMPAR HISTÓRICO';
   }
+}
+
+// ══════════════════════════════════════════════════════════
+//  FORMULÁRIO DO AUXILIAR — hora a hora, efetivo por nome
+// ══════════════════════════════════════════════════════════
+const TON_ATADO_AUX=2, TON_VAGAO_AUX=96;
+let auxSel=[];   // matrículas dos colegas marcados
+
+// ── Efetivo por lista ──
+function togMaisAux(){
+  const on=document.getElementById('ef-mais').checked;
+  document.getElementById('ef-lista-box').style.display=on?'block':'none';
+  if(!on){auxSel=[];document.getElementById('ef-lista-fte').style.display='none';}
+  else montaListaAux();
+  calcEfetivo();
+}
+function togFte(){
+  const b=document.getElementById('ef-lista-fte');
+  const vis=b.style.display!=='none';
+  b.style.display=vis?'none':'block';
+  document.getElementById('ef-btn-fte').textContent=vis?'+ auxiliar de outro turno (FTE)':'− esconder outros turnos';
+}
+function montaListaAux(){
+  const tuServico=getTurno(today(),curPeriodo());
+  const eu=currentUser?.mat;
+  const chip=a=>`<label class="chip"><input type="checkbox" value="${a.mat}" ${auxSel.includes(a.mat)?'checked':''}
+      onchange="marcaAux(${a.mat},this.checked)"> ${a.nome}${a.turno!==tuServico?' ('+a.turno+')':''}</label>`;
+  document.getElementById('ef-lista-turno').innerHTML=
+    APP_DATA.auxiliares.filter(a=>a.turno===tuServico&&a.mat!==eu).map(chip).join('')||
+    '<span style="font-size:11px;color:#7a8fa6;">Ninguém mais cadastrado neste turno.</span>';
+  document.getElementById('ef-chips-fte').innerHTML=
+    APP_DATA.auxiliares.filter(a=>a.turno!==tuServico&&a.mat!==eu).map(chip).join('');
+}
+function marcaAux(mat,on){
+  mat=parseInt(mat);
+  if(on){ if(!auxSel.includes(mat))auxSel.push(mat); }
+  else auxSel=auxSel.filter(m=>m!==mat);
+  calcEfetivo();
+}
+
+function efetivoObj(){
+  const n=id=>parseInt(document.getElementById(id)?.value||0)||0;
+  const tuServico=getTurno(today(),curPeriodo());
+  const colegas=auxSel.map(m=>{
+    const a=APP_DATA.auxiliares.find(x=>x.mat===m);
+    return a?{mat:a.mat,nome:a.nome,turno:a.turno,fte:a.turno!==tuServico}:null;
+  }).filter(Boolean);
+  const auxCasa=1+colegas.length;
+  const opCasa=n('ef-op-casa'), ogmo=n('ef-ogmo');
+  return {auxCasa,opCasa,ogmo,terc:0,colegas,
+          casa:auxCasa+opCasa,externo:ogmo,total:auxCasa+opCasa+ogmo};
+}
+
+function calcEfetivo(){
+  const el=document.getElementById('ef-total');
+  if(!el)return;
+  const e=efetivoObj();
+  const nomes=e.colegas.length?' — com '+e.colegas.map(c=>c.nome+(c.fte?' (FTE)':'')).join(', '):'';
+  el.textContent=`Total na frente: ${e.total} — ${e.auxCasa} auxiliar(es)${nomes}`;
+}
+
+// ── Grades hora a hora ──
+function horasDoPeriodo(){ return HORAS_PERIODO[PER_LABELS[curPeriodo()]]||[]; }
+
+function montaGradeAvaria(){
+  const hs=horasDoPeriodo();
+  const cols='grid-template-columns:56px 1.3fr 1fr;';
+  let h=`<div class="hh-cab" style="${cols}"><span>Hora</span><span>Sigla</span><span>Atados</span></div>`;
+  h+=hs.map(hr=>{
+    const id=hr.replace('x','');
+    return `<div class="hh-lin" id="avaria-l-${id}" style="${cols}">
+      <div class="hh-h">${hr}</div>
+      <input type="text" id="avaria-sku-${id}" placeholder="TSP-EP" oninput="calcHH('avaria')" style="text-transform:uppercase;">
+      <input type="text" inputmode="numeric" id="avaria-at-${id}" placeholder="—" oninput="calcHH('avaria')">
+    </div>`;
+  }).join('');
+  document.getElementById('hh-avaria').innerHTML=h;
+}
+
+function montaGradeHH(destino, campos, prefixo){
+  const hs=horasDoPeriodo();
+  const cols=`grid-template-columns:56px ${campos.map(()=>'1fr').join(' ')};`;
+  let h=`<div class="hh-cab" style="${cols}"><span>Hora</span>${campos.map(c=>`<span>${c.rot}</span>`).join('')}</div>`;
+  h+=hs.map(hr=>{
+    const id=hr.replace('x','');
+    return `<div class="hh-lin" id="${prefixo}-l-${id}" style="${cols}">
+      <div class="hh-h">${hr}</div>
+      ${campos.map(c=>`<input type="text" inputmode="numeric" id="${prefixo}-${c.k}-${id}"
+          placeholder="—" oninput="calcHH('${prefixo}')">`).join('')}
+    </div>`;
+  }).join('');
+  document.getElementById(destino).innerHTML=h;
+}
+
+function lerHH(prefixo, campos){
+  return horasDoPeriodo().map(hr=>{
+    const id=hr.replace('x','');
+    const o={hora:hr};
+    let algum=false;
+    campos.forEach(c=>{const v=nDec(`${prefixo}-${c.k}-${id}`); o[c.k]=v; if(v!=null&&v>0)algum=true;});
+    return algum?o:null;
+  }).filter(Boolean);
+}
+
+function calcHH(prefixo){
+  horasDoPeriodo().forEach(hr=>{
+    const id=hr.replace('x','');
+    const lin=document.getElementById(`${prefixo}-l-${id}`);
+    if(lin)lin.classList.toggle('tem',[...lin.querySelectorAll('input')].some(i=>i.value.trim()));
+  });
+  if(prefixo==='ferro'){
+    const l=lerHH('ferro',[{k:'vg'}]);
+    const v=l.reduce((s,x)=>s+(x.vg||0),0);
+    document.getElementById('receb-calc').textContent=
+      v?`${v} vagões × ${TON_VAGAO_AUX} t = ${fmtT(v*TON_VAGAO_AUX)} toneladas · ${l.length}h lançada(s)`:'';
+  }
+  if(prefixo==='rodo'){
+    const l=lerHH('rodo',[{k:'car'},{k:'at'}]);
+    const c=l.reduce((s,x)=>s+(x.car||0),0), a=l.reduce((s,x)=>s+(x.at||0),0);
+    document.getElementById('receb-calc').textContent=
+      a?`${c} carretas · ${a} atados × ${TON_ATADO_AUX} t = ${fmtT(a*TON_ATADO_AUX)} toneladas`:'';
+  }
+  if(prefixo==='avaria'){
+    const l=lerHH('avaria',[{k:'at'}]);
+    const a=l.reduce((s,x)=>s+(x.at||0),0);
+    const sk=[...new Set(horasDoPeriodo().map(hr=>document.getElementById('avaria-sku-'+hr.replace('x',''))?.value.trim()).filter(Boolean))];
+    document.getElementById('avar-calc').textContent=
+      a?`${a} atados × ${TON_ATADO_AUX} t = ${fmtT(a*TON_ATADO_AUX)} toneladas${sk.length?' · '+sk.join(', '):''}`:'';
+  }
+}
+
+function calcArm(){
+  const a=nDec('arm-ton'), el=document.getElementById('arm-calc');
+  el.textContent = a>0 ? `${a} atados × ${TON_ATADO_AUX} t = ${fmtT(a*TON_ATADO_AUX)} toneladas` : '';
+}
+
+
+
+// ══════════════════════════════════════════════════════════
+//  RETAGUARDA — programações, estoque por hora, contagem
+// ══════════════════════════════════════════════════════════
+const CAP_ARM={
+  V01:1618,V02:1334,V03:638,V04:578,V05:878,V06:522,V07:522,V08:462,
+  V09:792,V10:1596,V11:798,V12:1596,V13:1664,V14:1596,V15:798,V16:1596,
+  V17:1664,V18:798,V19:1664,V20:1596,V21:710,
+  RUA08:966,RUA11:462,RUA15:790,RUA18:790,
+  'PORTA 1':180,'PORTA 2':310,'PORTA 3':310,'PORTA 4':310,'PORTA 5':310,'PORTA 6':350,
+  AVARIAS:0,SEGREGADAS:0,BUFFER:1920
+};
+const MAR_SEQ=['AVARIAS','SEGREGADAS','PORTA 6','V07','PORTA 5','V06','PORTA 4','V05','V04','PORTA 3','V03','PORTA 2','V02','PORTA 1','V01'];
+const TERRA_SEQ=['V08','RUA08','V21','V20','V19','RUA18','V18','V17','V16','RUA15','V15','V14','V13','V12','RUA11','V11','V10','V09'];
+const PONTOS=[...TERRA_SEQ,...MAR_SEQ,'BUFFER'];
+const CORES_SKU={'RSP-EP':'#2F5FA8','TSP-EP':'#038799','RSP-PP':'#E86FB0','TSP-PP':'#E8A33D','HSH-EP':'#6C5CE7','RSP-PR':'#22C3A6'};
+const corSku=k=>CORES_SKU[k]||'#7A8FA6';
+
+let progAbertas=[], ultContagem=null, retUnsub=null;
+
+function podeRetaguarda(){return ['CONTROLADOR','ASSISTENTE'].includes(currentLider?.funcao);}
+
+async function loadRetaguarda(){
+  if(!podeRetaguarda()){
+    document.getElementById('kt-ret').innerHTML='<div class="card"><p style="font-size:13px;color:#7a8fa6;">Retaguarda é preenchida por controlador ou assistente.</p></div>';
+    return;
+  }
+  const sel=document.getElementById('est-hora');
+  if(sel&&!sel.dataset.init){
+    sel.innerHTML=(HORAS_PERIODO[PER_LABELS[curPeriodo()]]||[]).map(h=>`<option>${h}</option>`).join('');
+    sel.dataset.init='1';
+  }
+  montaContagem();
+  await carregaUltContagem();
+  escutaRetaguarda();
+}
+
+// ── Programações ──
+function togProg(){
+  const t=document.querySelector('input[name="prog-t"]:checked')?.value;
+  document.getElementById('prog-ferro').style.display=t==='ferro'?'block':'none';
+  document.getElementById('prog-rodo').style.display=t==='rodo'?'block':'none';
+  document.getElementById('prog-avaria').style.display=t==='avaria'?'block':'none';
+}
+
+async function salvarProg(){
+  const t=document.querySelector('input[name="prog-t"]:checked')?.value;
+  if(!t){toast('Escolha o tipo da operação.','danger');return;}
+  let rec={tipo:t,data:today(),turno:getTurno(today(),curPeriodo()),periodo:PER_LABELS[curPeriodo()],
+           aberta:true,abertaPor:currentLider?.nome||'',criadoEm:new Date().toISOString()};
+  if(t==='ferro'){
+    const pfx=document.getElementById('pg-prefixo').value.trim().toUpperCase();
+    const vg=nDec('pg-vagoes');
+    if(!pfx||!(vg>0)){toast('Informe prefixo e vagões.','danger');return;}
+    rec={...rec,prefixo:pfx,vagoesProg:vg,tonProg:vg*TON_VAGAO};
+  }else{
+    const p=t==='rodo'?'pg':'pa';
+    const car=nDec(p+'-carretas'), ton=nDec(p+'-ton');
+    const sku=document.getElementById(p+'-sku').value.trim().toUpperCase();
+    if(!(car>0)||!(ton>0)||!sku){toast('Informe carretas, toneladas e SKU.','danger');return;}
+    rec={...rec,carretasProg:car,tonProg:ton,sku};
+  }
+  try{
+    await db.collection('programacoes').add(rec);
+    toast('Programação aberta.','success');
+    ['pg-prefixo','pg-vagoes','pg-carretas','pg-ton','pg-sku','pa-carretas','pa-ton','pa-sku']
+      .forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    document.querySelectorAll('input[name="prog-t"]').forEach(r=>r.checked=false); togProg();
+  }catch(e){toast('Erro: '+e.message,'danger');}
+}
+
+async function encerrarProg(id){
+  if(!confirm('Marcar esta operação como concluída?'))return;
+  try{
+    await db.collection('programacoes').doc(id).update({aberta:false,encerradaEm:new Date().toISOString(),encerradaPor:currentLider?.nome||''});
+    toast('Operação concluída.','success');
+  }catch(e){toast('Erro: '+e.message,'danger');}
+}
+
+// ── Avanço em tempo real: programado × lançado pelos auxiliares ──
+function escutaRetaguarda(){
+  if(!db)return;
+  if(retUnsub){retUnsub();retUnsub=null;}
+  const dia=today();
+  try{
+    retUnsub=db.collection('registros').where('data','==',dia)
+      .onSnapshot(snap=>{
+        window._regHoje=snap.docs.map(d=>d.data());
+        pintaProgs();
+      },e=>console.error(e));
+  }catch(e){console.error(e);}
+  db.collection('programacoes').where('aberta','==',true)
+    .onSnapshot(s=>{progAbertas=s.docs.map(d=>({id:d.id,...d.data()}));pintaProgs();},e=>console.error(e));
+}
+
+function realizadoDe(tipo){
+  const regs=window._regHoje||[];
+  if(tipo==='ferro'){
+    const r=regs.filter(x=>x.atividade==='recebimento'&&x.producao?.tipo==='Ferro');
+    return {qtd:r.reduce((s,x)=>s+(x.producao.qtd||0),0), ton:r.reduce((s,x)=>s+(x.producao.valor||0),0), n:r.length};
+  }
+  if(tipo==='rodo'){
+    const r=regs.filter(x=>x.atividade==='recebimento'&&x.producao?.tipo==='Rodo');
+    return {qtd:r.reduce((s,x)=>s+(x.producao.carretas||0),0), ton:r.reduce((s,x)=>s+(x.producao.valor||0),0), n:r.length};
+  }
+  const r=regs.filter(x=>x.atividade==='avarias');
+  return {qtd:r.reduce((s,x)=>s+(x.producao?.qtd||0),0), ton:r.reduce((s,x)=>s+(x.producao?.valor||0),0), n:r.length};
+}
+
+function pintaProgs(){
+  const box=document.getElementById('prog-abertas');
+  if(!box)return;
+  if(!progAbertas.length){box.innerHTML='<p style="font-size:12px;color:#7a8fa6;">Nenhuma operação aberta.</p>';return;}
+  box.innerHTML=progAbertas.map(p=>{
+    const r=realizadoDe(p.tipo);
+    const prog=p.tipo==='ferro'?p.vagoesProg:p.carretasProg;
+    const un=p.tipo==='ferro'?'vagões':'carretas';
+    const pc=prog?Math.min(100,r.qtd/prog*100):0;
+    const cheio=pc>=100;
+    const tit=p.tipo==='ferro'?`Ferro · ${p.prefixo}`:p.tipo==='rodo'?`Rodo · ${p.sku}`:`Avaria · ${p.sku}`;
+    return `<div style="background:var(--bg);border-radius:9px;padding:12px 14px;margin-bottom:9px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px;">
+        <div><b style="font-size:13px;">${tit}</b>
+          <span style="font-size:10.5px;color:#7a8fa6;font-weight:600;"> · aberta por ${p.abertaPor||'—'}</span></div>
+        <button class="btn btn-sec btn-sm" onclick="encerrarProg('${p.id}')">✓ Concluir</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;background:#fff;border-radius:5px;height:19px;overflow:hidden;border:1px solid var(--border);">
+          <div style="height:100%;width:${pc}%;background:${cheio?'var(--green)':'var(--teal)'};transition:width .5s;"></div>
+        </div>
+        <b style="font-size:13px;white-space:nowrap;color:${cheio?'var(--green)':'var(--dark)'};">${r.qtd} de ${prog} ${un}</b>
+      </div>
+      <div style="font-size:10.5px;color:#7a8fa6;font-weight:600;margin-top:5px;">
+        ${fmtT(r.ton)} t realizadas de ${fmtT(p.tonProg||0)} t programadas · ${r.n} lançamento(s) · ${pc.toFixed(0)}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Estoque por hora ──
+function calcEstoque(){
+  const g=nDec('est-geral')||0, a=nDec('est-avaria')||0;
+  document.getElementById('est-calc').textContent =
+    (g||a) ? `Geral ${fmtT(g)} at = ${fmtT(g*TON_ATADO)} t · Avaria ${fmtT(a)} at = ${fmtT(a*TON_ATADO)} t · Total ${fmtT((g+a)*TON_ATADO)} t` : '';
+}
+
+async function salvarEstoque(){
+  const g=nDec('est-geral');
+  if(!(g>=0)){toast('Informe os atados em geral.','danger');return;}
+  const a=nDec('est-avaria')||0;
+  try{
+    await db.collection('estoque_horas').add({
+      data:today(), periodo:PER_LABELS[curPeriodo()], hora:document.getElementById('est-hora').value,
+      turno:getTurno(today(),curPeriodo()),
+      atadosGeral:g, atadosAvaria:a, tonGeral:g*TON_ATADO, tonAvaria:a*TON_ATADO,
+      total:g+a, tonTotal:(g+a)*TON_ATADO,
+      lancadoPor:currentLider?.nome||'', createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('Estoque lançado.','success');
+    document.getElementById('est-geral').value='';document.getElementById('est-avaria').value='';
+    calcEstoque(); carregaEstHist();
+  }catch(e){toast('Erro: '+e.message,'danger');}
+}
+
+async function carregaEstHist(){
+  if(!db)return;
+  try{
+    const snap=await db.collection('estoque_horas').where('data','==',today()).get();
+    const l=snap.docs.map(d=>d.data()).sort((a,b)=>a.hora.localeCompare(b.hora));
+    const box=document.getElementById('est-hist');
+    if(!l.length){box.innerHTML='';return;}
+    const max=Math.max(...l.map(x=>x.total));
+    box.innerHTML='<p class="sub-rot">Lançado hoje</p>'+
+      '<div style="display:flex;align-items:flex-end;gap:6px;height:78px;">'+
+      l.map(x=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"
+          title="${x.hora} — ${fmtT(x.total)} atados">
+        <div style="font-size:8.5px;font-weight:800;">${fmtT(x.total)}</div>
+        <div style="width:100%;max-width:34px;height:${(x.total/max*100)||3}%;background:var(--teal);border-radius:4px 4px 0 0;min-height:3px;"></div>
+        <div style="font-size:8px;color:#7a8fa6;font-weight:700;margin-top:3px;">${x.hora}</div>
+      </div>`).join('')+'</div>';
+  }catch(e){console.error(e);}
+}
+
+// ── Contagem do armazém ──
+function montaContagem(){
+  const box=document.getElementById('cont-lista');
+  if(!box||box.dataset.pronto)return;
+  const linha=n=>{
+    const cap=CAP_ARM[n];
+    const esp=n==='AVARIAS'||n==='SEGREGADAS'||n==='BUFFER';
+    return `<div class="cont-lin" id="cl-${n.replace(/\s/g,'_')}">
+      <div class="cn">${n}${cap?`<span>cap ${fmtT(cap)}</span>`:''}</div>
+      <input type="text" inputmode="numeric" id="ct-q-${n.replace(/\s/g,'_')}" placeholder="—" oninput="calcContagem()">
+      <input type="text" id="ct-s-${n.replace(/\s/g,'_')}" placeholder="SKU" style="text-transform:uppercase;" oninput="calcContagem()">
+    </div>`;
+  };
+  box.innerHTML=
+    '<p class="sub-rot">Lado terra</p><div class="cont-cab"><span>Ponto</span><span>Atados</span><span>SKU</span></div>'+
+    TERRA_SEQ.map(linha).join('')+
+    '<p class="sub-rot" style="margin-top:12px;">Lado mar</p><div class="cont-cab"><span>Ponto</span><span>Atados</span><span>SKU</span></div>'+
+    MAR_SEQ.map(linha).join('')+
+    '<p class="sub-rot" style="margin-top:12px;">Buffer</p>'+linha('BUFFER');
+  box.dataset.pronto='1';
+}
+
+function lerContagem(){
+  return PONTOS.map(n=>{
+    const k=n.replace(/\s/g,'_');
+    const q=nDec('ct-q-'+k);
+    if(q==null)return null;
+    return {ponto:n,qtd:q,sku:(document.getElementById('ct-s-'+k)?.value||'').trim().toUpperCase(),cap:CAP_ARM[n]||0};
+  }).filter(Boolean);
+}
+
+function calcContagem(){
+  const c=lerContagem();
+  const t=c.reduce((s,x)=>s+x.qtd,0);
+  const estouro=c.filter(x=>x.cap&&x.qtd>x.cap);
+  document.getElementById('cont-resumo').innerHTML=
+    c.length ? `${c.length} de ${PONTOS.length} pontos · <b>${fmtT(t)} atados</b> · ${fmtT(t*TON_ATADO)} toneladas`+
+      (estouro.length?` · <span style="color:var(--danger);">${estouro.length} acima da capacidade</span>`:'')
+    : 'Preencha os pontos contados.';
+  c.forEach(x=>{
+    const el=document.getElementById('cl-'+x.ponto.replace(/\s/g,'_'));
+    if(el)el.classList.toggle('estouro',!!(x.cap&&x.qtd>x.cap));
+  });
+  compararDivergencia(t);
+}
+
+// Comparativo: contagem × último estoque lançado por hora
+function compararDivergencia(totalContado){
+  const box=document.getElementById('cont-diverg');
+  const est=window._ultEstoque;
+  if(!est||!totalContado){box.style.display='none';return;}
+  const dif=totalContado-est.total;
+  const pc=est.total?Math.abs(dif/est.total*100):0;
+  const ok=Math.abs(dif)<=est.total*0.01;
+  box.style.display='block';
+  box.style.background=ok?'rgba(138,186,61,.13)':'rgba(217,83,79,.11)';
+  box.style.color=ok?'#5d8021':'var(--danger)';
+  box.innerHTML= ok
+    ? `✓ Contagem confere com o lançado por hora — diferença de ${fmtT(Math.abs(dif))} atados (${pc.toFixed(1)}%).`
+    : `⚠ Divergência de <b>${fmtT(Math.abs(dif))} atados</b> (${fmtT(Math.abs(dif)*TON_ATADO)} t · ${pc.toFixed(1)}%) — `+
+      `contagem ${fmtT(totalContado)} × lançado ${fmtT(est.total)} às ${est.hora}.`;
+}
+
+async function carregaUltContagem(){
+  if(!db)return;
+  try{
+    const s1=await db.collection('contagens_armazem').orderBy('data','desc').limit(1).get();
+    if(!s1.empty)ultContagem={id:s1.docs[0].id,...s1.docs[0].data()};
+    const s2=await db.collection('estoque_horas').where('data','==',today()).get();
+    const l=s2.docs.map(d=>d.data()).sort((a,b)=>b.hora.localeCompare(a.hora));
+    window._ultEstoque=l[0]||null;
+    carregaEstHist();
+  }catch(e){console.error(e);}
+}
+
+async function salvarContagem(){
+  const c=lerContagem();
+  if(!c.length){toast('Conte ao menos um ponto.','danger');return;}
+  const total=c.reduce((s,x)=>s+x.qtd,0);
+  const est=window._ultEstoque;
+  try{
+    await db.collection('contagens_armazem').add({
+      data:today(), turno:getTurno(today(),curPeriodo()), periodo:PER_LABELS[curPeriodo()],
+      responsavel:currentLider?.nome||'', matricula:currentLider?.mat||null, funcao:currentLider?.funcao||'',
+      pontos:c, totalAtados:total, totalTon:total*TON_ATADO,
+      estoqueLancado:est?est.total:null, divergencia:est?total-est.total:null,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('Contagem salva.','success');
+    carregaUltContagem();
+  }catch(e){toast('Erro: '+e.message,'danger');}
+}
+
+function copiarContagem(){
+  const c=lerContagem().filter(x=>x.qtd>0);
+  if(!c.length){toast('Conte ao menos um ponto.','danger');return;}
+  const t=c.reduce((s,x)=>s+x.qtd,0);
+  let m=`CONTAGEM DO ARMAZÉM T32 — ${fmtDate(today())}\n`;
+  m+=`Contagem: ${currentLider?.nome||'—'} · Turno ${getTurno(today(),curPeriodo())} · ${PER_LABELS[curPeriodo()]}\n\n`;
+  c.forEach(x=>{m+=`${x.ponto}: ${fmtT(x.qtd)} at${x.sku?' · '+x.sku:''}\n`;});
+  m+=`\nTOTAL: ${fmtT(t)} atados · ${fmtT(t*TON_ATADO)} toneladas\n`;
+  const vazios=PONTOS.filter(n=>/^V\d/.test(n)&&!c.some(x=>x.ponto===n));
+  if(vazios.length)m+=`Vãos vazios: ${vazios.join(', ')}`;
+  navigator.clipboard.writeText(m).then(
+    ()=>toast('Mensagem copiada.','success'),
+    ()=>{const e=document.createElement('textarea');e.value=m;document.body.appendChild(e);e.select();
+         document.execCommand('copy');e.remove();toast('Mensagem copiada.','success');});
+}
+
+// ── Mapa do armazém ──
+function verMapa(){
+  const c=lerContagem().filter(x=>x.qtd>0);
+  const fonte = c.length ? {pontos:c,data:today(),responsavel:currentLider?.nome||'—',
+                            turno:getTurno(today(),curPeriodo()),periodo:PER_LABELS[curPeriodo()],aoVivo:true}
+                         : ultContagem;
+  if(!fonte){toast('Nenhuma contagem registrada ainda.','danger');return;}
+  const porPonto={}; (fonte.pontos||[]).forEach(p=>{
+    if(!porPonto[p.ponto])porPonto[p.ponto]=[];
+    porPonto[p.ponto].push({sku:p.sku||'—',q:p.qtd});
+  });
+  const totDe=n=>(porPonto[n]||[]).reduce((s,x)=>s+x.q,0);
+
+  const cel=n=>{
+    const cap=CAP_ARM[n]||0, itens=porPonto[n]||[], q=totDe(n);
+    const pc=cap?Math.min(100,q/cap*100):(q?100:0);
+    const esp=n==='AVARIAS'?'mp-avaria':n==='SEGREGADAS'?'mp-segr':n.startsWith('PORTA')?'mp-porta':n.startsWith('RUA')?'mp-rua':'';
+    const faixas=itens.map(i=>{
+      const h=cap?(i.q/cap*100):100/itens.length;
+      return `<div class="mp-faixa" style="height:${h}%;background:${corSku(i.sku)};">
+        <span class="mp-fx"><b>${i.sku}</b>${h>11?`<br>${fmtT(i.q*TON_ATADO)} t`:''}</span></div>`;
+    }).reverse().join('');
+    const curto=n.replace('PORTA ','P').replace('AVARIAS','AVAR.').replace('SEGREGADAS','SEGR.').replace('RUA','R');
+    const tip=itens.length?itens.map(i=>`${i.sku}: ${fmtT(i.q)} at · ${fmtT(i.q*TON_ATADO)} t`).join('\u000a'):'vazio';
+    return `<div class="mp-cel ${esp}" style="flex:${cap||420};" title="${n} — ${fmtT(q)}${cap?' de '+fmtT(cap):''} atados&#10;${tip}">
+      ${q?`<div class="mp-fill" style="height:calc((100% - 19px) * ${(pc/100).toFixed(3)})">${faixas}</div>`:''}
+      ${q?`<div class="mp-topo">${fmtT(q)}</div>`:''}
+      <div class="mp-rot"><span class="mp-n">${curto}</span>${q?'':`<span class="mp-cap">${cap||''}</span>`}</div>
+    </div>`;
+  };
+
+  const tot=PONTOS.reduce((s,n)=>s+totDe(n),0);
+  const capTot=Object.values(CAP_ARM).reduce((a,b)=>a+b,0);
+  const skus=[...new Set((fonte.pontos||[]).map(p=>p.sku).filter(Boolean))];
+
+  document.getElementById('mapa-corpo').innerHTML=`
+    <div class="mp-cab">${fmtDate(fonte.data)} · ${fonte.responsavel} · Turno ${fonte.turno} · ${fonte.periodo}
+      ${fonte.aoVivo?'<span style="color:var(--orange);font-weight:800;"> · prévia não salva</span>':''}</div>
+    <div class="mini-dash" style="margin-bottom:14px;">
+      <div class="mini-stat"><div class="v">${fmtT(tot)}</div><div class="l">Atados</div></div>
+      <div class="mini-stat t"><div class="v">${fmtT(tot*TON_ATADO)}</div><div class="l">Toneladas</div></div>
+      <div class="mini-stat g"><div class="v">${fmtT(capTot-tot)}</div><div class="l">Espaço livre</div></div>
+    </div>
+    <div class="mp-lado">Lado terra — V08 · V21 a V09</div>
+    <div class="mp-fila">${TERRA_SEQ.map(cel).join('')}</div>
+    <div class="mp-lado">Lado mar — Avarias · Segregadas · V07 a V01</div>
+    <div class="mp-fila">${MAR_SEQ.map(cel).join('')}</div>
+    <div class="mp-lado">Buffer</div>
+    <div class="mp-fila">${cel('BUFFER')}</div>
+    <div class="mp-leg">${skus.map(k=>`<span><i style="background:${corSku(k)}"></i>${k}</span>`).join('')}</div>`;
+  document.getElementById('mapa-modal').style.display='flex';
 }
 
 // ══ CONTROLE DE ACESSO POR FUNÇÃO ══
@@ -2183,15 +2862,16 @@ function aplicarEscopo(){
   pintaBotoesAdmin();
 
   // esconde as abas de gente para assistente e controlador
-  const tabs=['dash','embh','hist','manut','maqhist','turnos','auxind','opind','inv'];
+  const tabs=['dash','embh','hist','manut','maqhist','turnos','auxind','opind','ret','inv'];
   document.querySelectorAll('#kpi-nav .tab').forEach((el,i)=>{
     let oculta=(tabs[i]==='auxind'||tabs[i]==='opind')&&!podeGente;
+    if(tabs[i]==='ret'&&!podeRetaguarda())oculta=true;
     el.style.display=oculta?'none':'';
   });
 }
 
 function showKTab(t){
-  const tabs=['dash','embh','hist','manut','maqhist','turnos','auxind','opind','inv'];
+  const tabs=['dash','embh','hist','manut','maqhist','turnos','auxind','opind','ret','inv'];
   if((t==='auxind'||t==='opind')&&!(ehCoordenador()||ehSupervisor())){
     toast('Acesso restrito a supervisor e coordenação.','danger');return;
   }
@@ -2199,6 +2879,7 @@ function showKTab(t){
   document.querySelectorAll('#kpi-nav .tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
   if(t==='dash')setTimeout(()=>loadKPI(),50);
   if(t==='embh')loadEmbh();
+  if(t==='ret')loadRetaguarda();
   if(t==='inv')loadInv();
   if(t==='hist')loadHist();
   if(t==='manut')loadManut();
