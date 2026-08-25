@@ -218,6 +218,30 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
 <body>
 
 <!-- FIREBASE MODAL -->
+<!-- ══ CADASTRO DO NAVIO ══ -->
+<div class="modal-overlay" id="nav-modal" style="display:none;">
+  <div class="modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto;">
+    <h3>⚓ Navio em Operação</h3>
+    <p>Cadastre uma vez, no início da operação. O hora a hora abate deste total.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+      <div class="fgrp"><label>Navio *</label><input type="text" id="nv-in-nome" placeholder="GREEN VITORIA"></div>
+      <div class="fgrp"><label>Viagem</label><input type="text" id="nv-in-voy" placeholder="voy. 11"></div>
+      <div class="fgrp"><label>Produto</label><input type="text" id="nv-in-prod" placeholder="RSP-EP"></div>
+      <div class="fgrp"><label>Destino</label><input type="text" id="nv-in-dest" placeholder="TIANJIN"></div>
+      <div class="fgrp"><label>Shipper</label><input type="text" id="nv-in-ship" placeholder="SUZANO S.A."></div>
+      <div class="fgrp"><label>Ternos ativos</label><select id="nv-in-ternos"><option value="1">1 terno</option><option value="2" selected>2 ternos</option></select></div>
+    </div>
+    <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin:12px 0 7px;text-transform:uppercase;letter-spacing:.4px;">Distribuição por porão (toneladas)</p>
+    <div id="nv-in-poroes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:7px;"></div>
+    <div id="nv-in-total" style="font-size:13px;font-weight:800;color:var(--blue);margin-top:11px;"></div>
+    <div id="nv-err" style="display:none;color:var(--danger);font-size:12px;font-weight:600;margin-top:8px;"></div>
+    <div class="flex-end" style="margin-top:14px;gap:8px;">
+      <button class="btn btn-sec btn-sm" onclick="document.getElementById('nav-modal').style.display='none'">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarNavio()">Salvar navio</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="fb-modal" style="display:none;">
   <div class="modal-box">
     <h3>⚙️ Configurar Firebase</h3>
@@ -475,16 +499,96 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
   <div id="kpi-gate" style="display:none;">
   <div class="nav-tabs" id="kpi-nav">
     <div class="tab active" onclick="showKTab('dash')">📊 Dashboard</div>
+    <div class="tab" onclick="showKTab('embh')">⚓ Embarque h×h</div>
     <div class="tab" onclick="showKTab('hist')">📋 Histórico</div>
     <div class="tab" onclick="showKTab('manut')">🔧 Manutenção</div>
     <div class="tab" onclick="showKTab('maqhist')">🚜 Máquinas</div>
     <div class="tab" onclick="showKTab('turnos')">🔄 Por Turno</div>
     <div class="tab" onclick="showKTab('auxind')">👷 Auxiliares</div>
     <div class="tab" onclick="showKTab('opind')">🦺 Operadores</div>
+    <div class="tab" onclick="showKTab('inv')">📦 Inventário</div>
     <div class="tab" onclick="goForm()">➕ Registro</div>
   </div>
 
   <!-- DASHBOARD -->
+  <!-- ══ INVENTÁRIO DE MATERIAIS ══ -->
+  <div id="kt-inv" style="display:none;">
+    <div class="card">
+      <h3><div class="icon ib">📦</div>Contagem de Materiais</h3>
+      <p style="font-size:12px;color:#7a8fa6;margin-bottom:12px;">Contagem quinzenal. Deixe em branco o que não for contado.</p>
+      <div style="display:grid;grid-template-columns:150px 1fr;gap:9px;align-items:end;margin-bottom:10px;">
+        <div class="fgrp" style="margin:0;"><label>Data</label><input type="date" id="inv-data"></div>
+        <div style="font-size:12px;color:#7a8fa6;padding-bottom:9px;">
+          Responsável: <b id="inv-resp" style="color:var(--dark);">—</b> · Turno <b id="inv-turno" style="color:var(--dark);">—</b>
+        </div>
+      </div>
+      <div id="inv-ultima" style="font-size:11px;color:#7a8fa6;font-weight:600;margin-bottom:12px;"></div>
+      <div id="inv-lista"></div>
+      <div class="fgrp" style="margin-top:12px;"><label>Observações</label><input type="text" id="inv-obs" placeholder="Opcional"></div>
+      <div id="inv-resumo" style="background:rgba(3,135,153,.08);border-radius:9px;padding:11px 13px;margin-top:12px;font-size:12px;font-weight:700;color:var(--teal);"></div>
+      <div class="flex-end" style="margin-top:14px;gap:8px;">
+        <button class="btn btn-sec btn-sm" onclick="copiarInv()">📋 Copiar p/ WhatsApp</button>
+        <button class="btn btn-primary btn-sm" onclick="salvarInv()">💾 Salvar contagem</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ EMBARQUE HORA A HORA ══ -->
+  <div id="kt-embh" style="display:none;">
+
+    <!-- Navio em operação -->
+    <div class="card">
+      <h3><div class="icon ib">⚓</div>Navio em Operação — Berço 32</h3>
+      <div id="embh-sem-navio" style="display:none;">
+        <p style="font-size:12px;color:#7a8fa6;margin-bottom:12px;">Nenhum navio cadastrado. Cadastre para começar o hora a hora.</p>
+        <button class="btn btn-primary btn-sm" onclick="abrirCadNavio()">⚓ Cadastrar navio</button>
+      </div>
+      <div id="embh-navio-info" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+          <div>
+            <div id="nv-nome" style="font-size:19px;font-weight:800;color:var(--blue);"></div>
+            <div id="nv-sub" style="font-size:12px;color:#7a8fa6;font-weight:600;margin-top:2px;"></div>
+          </div>
+          <button class="btn btn-sec btn-sm" onclick="abrirCadNavio(true)">✏️ Editar</button>
+        </div>
+        <div class="mini-dash" id="nv-stats"></div>
+        <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin:14px 0 8px;text-transform:uppercase;letter-spacing:.4px;">Saldo por porão</p>
+        <div id="nv-poroes"></div>
+      </div>
+    </div>
+
+    <!-- Lançamento da hora -->
+    <div class="card" id="embh-lanc" style="display:none;">
+      <h3><div class="icon it">⏱️</div>Lançar Hora</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+        <div class="fgrp"><label>Data *</label><input type="date" id="eh-data"></div>
+        <div class="fgrp"><label>Período *</label><select id="eh-periodo"><option>07x13</option><option>13x19</option><option>19x01</option><option>01x07</option></select></div>
+        <div class="fgrp"><label>Hora *</label><select id="eh-hora"></select></div>
+        <div class="fgrp"><label>Produto</label><input type="text" id="eh-produto" placeholder="Atados de Celulose"></div>
+      </div>
+
+      <div id="eh-ternos"></div>
+
+      <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin:14px 0 7px;text-transform:uppercase;letter-spacing:.4px;">Paralisação (opcional)</p>
+      <div style="display:grid;grid-template-columns:110px 1fr;gap:9px;">
+        <div class="fgrp" style="margin:0;"><label>Sigla</label><select id="eh-par-sigla"></select></div>
+        <div class="fgrp" style="margin:0;"><label>Observação</label><input type="text" id="eh-par-obs" maxlength="60" placeholder="Até 60 caracteres"></div>
+      </div>
+
+      <div id="eh-resumo" style="background:rgba(3,135,153,.08);border-radius:9px;padding:12px 14px;margin-top:14px;font-size:12px;font-weight:700;color:var(--teal);"></div>
+      <div class="flex-end" style="margin-top:14px;"><button class="btn btn-primary" onclick="salvarHora()">💾 Salvar hora</button></div>
+    </div>
+
+    <!-- Grade do período -->
+    <div class="card" id="embh-grade-card" style="display:none;">
+      <h3><div class="icon ig">📋</div>Produtividade do Período</h3>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Hora</th><th>1º terno</th><th>2º terno</th><th>Soma (t)</th><th>t/h</th><th>Paral.</th></tr></thead>
+        <tbody id="eh-grade"></tbody>
+      </table></div>
+    </div>
+  </div>
+
   <div id="kt-dash">
     <div class="filter-bar">
       <div class="fgrp"><label>De</label><input type="date" id="kpi-de"></div>
@@ -1372,6 +1476,389 @@ async function showSucesso(savedRec){
 }
 
 // ══ KPI TABS ══
+// ══════════════════════════════════════════════════════════
+//  EMBARQUE HORA A HORA  —  lançado por controlador/assistente
+// ══════════════════════════════════════════════════════════
+const PARALISACOES={
+  AT:'Falta de Carretas', AD:'Ajustando Carga a bordo', SO:'Mudança de estivagem pelo navio',
+  RE:'Ajuste de Equipamentos', EF:'Quebra de Equipamentos', VC:'Quebra de Ponte/Guincho',
+  SH:'Mudança de Porão', PA:'Preparação de terra', AB:'Ag de atracação', AC:'Ag de Carga',
+  AW:'Ag de Trabalhadores', LA:'Ag de Peação', SM:'DOS', OH:'Abert/Fech de porão',
+  OT:'Outros', AP:'Preparação do navio'
+};
+const HORAS_PERIODO={
+  '07x13':['07x08','08x09','09x10','10x11','11x12','12x13'],
+  '13x19':['13x14','14x15','15x16','16x17','17x18','18x19'],
+  '19x01':['19x20','20x21','21x22','22x23','23x00','00x01'],
+  '01x07':['01x02','02x03','03x04','04x05','05x06','06x07']
+};
+const POROES=[1,2,3,4,5,6,7,8,9,10];
+
+let navioAtual=null;
+let horasPeriodo=[];
+let embhUnsub=null;
+
+function podeLancarEmbarque(){
+  const f=currentLider?.funcao;
+  return f==='CONTROLADOR'||f==='ASSISTENTE'||f==='SUPERVISOR'||f==='COORDENADOR';
+}
+
+// ── Cadastro do navio ──
+function abrirCadNavio(editar){
+  const box=document.getElementById('nv-in-poroes');
+  box.innerHTML=POROES.map(p=>
+    `<div class="fgrp" style="margin:0;">
+       <label style="font-size:9px;">Porão ${p}</label>
+       <input type="text" inputmode="decimal" id="nv-p${p}" placeholder="0" oninput="calcTotalNavio()">
+     </div>`).join('');
+  if(editar&&navioAtual){
+    nv('nv-in-nome',navioAtual.nome); nv('nv-in-voy',navioAtual.viagem);
+    nv('nv-in-prod',navioAtual.produto); nv('nv-in-dest',navioAtual.destino);
+    nv('nv-in-ship',navioAtual.shipper);
+    document.getElementById('nv-in-ternos').value=navioAtual.ternos||2;
+    POROES.forEach(p=>{const v=(navioAtual.poroes||{})[p]; if(v)document.getElementById('nv-p'+p).value=v;});
+  }
+  calcTotalNavio();
+  document.getElementById('nv-err').style.display='none';
+  document.getElementById('nav-modal').style.display='flex';
+}
+function nv(id,v){const e=document.getElementById(id); if(e)e.value=v||'';}
+
+function poroesDoForm(){
+  const o={};
+  POROES.forEach(p=>{const v=nDec('nv-p'+p); if(v>0)o[p]=v;});
+  return o;
+}
+function calcTotalNavio(){
+  const po=poroesDoForm();
+  const t=Object.values(po).reduce((s,v)=>s+v,0);
+  document.getElementById('nv-in-total').textContent=
+    t>0?`Total a embarcar: ${fmtT(t)} t — ${Object.keys(po).length} porões`:'';
+}
+function fmtT(n){return (n||0).toLocaleString('pt-BR',{maximumFractionDigits:1});}
+
+async function salvarNavio(){
+  const nome=document.getElementById('nv-in-nome').value.trim();
+  const po=poroesDoForm();
+  const err=document.getElementById('nv-err');
+  if(!nome||!Object.keys(po).length){
+    err.textContent='Informe o navio e ao menos um porão com tonelagem.';
+    err.style.display='block';return;
+  }
+  const rec={
+    nome, viagem:document.getElementById('nv-in-voy').value.trim(),
+    produto:document.getElementById('nv-in-prod').value.trim(),
+    destino:document.getElementById('nv-in-dest').value.trim(),
+    shipper:document.getElementById('nv-in-ship').value.trim(),
+    ternos:parseInt(document.getElementById('nv-in-ternos').value)||2,
+    berco:32, poroes:po,
+    total:+Object.values(po).reduce((s,v)=>s+v,0).toFixed(2),
+    ativo:true, criadoEm:new Date().toISOString()
+  };
+  try{
+    if(navioAtual?.id) await db.collection('navios').doc(navioAtual.id).set(rec);
+    else await db.collection('navios').add(rec);
+    document.getElementById('nav-modal').style.display='none';
+    toast('Navio salvo.','success');
+    loadEmbh();
+  }catch(e){ err.textContent='Erro ao salvar: '+e.message; err.style.display='block'; }
+}
+
+// ── Tela do hora a hora ──
+async function loadEmbh(){
+  if(!podeLancarEmbarque()){
+    document.getElementById('kt-embh').innerHTML=
+      '<div class="card"><p style="font-size:13px;color:#7a8fa6;">Acesso restrito.</p></div>';
+    return;
+  }
+  // navio ativo
+  navioAtual=null;
+  if(db){
+    try{
+      const snap=await db.collection('navios').where('ativo','==',true).limit(1).get();
+      if(!snap.empty){const d=snap.docs[0]; navioAtual={id:d.id,...d.data()};}
+    }catch(e){console.error(e);}
+  }
+  const semNav=document.getElementById('embh-sem-navio');
+  const info=document.getElementById('embh-navio-info');
+  const lanc=document.getElementById('embh-lanc');
+  const grade=document.getElementById('embh-grade-card');
+
+  if(!navioAtual){
+    semNav.style.display='block'; info.style.display='none';
+    lanc.style.display='none'; grade.style.display='none'; return;
+  }
+  semNav.style.display='none'; info.style.display='block';
+  lanc.style.display='block'; grade.style.display='block';
+
+  // defaults do formulário
+  const dt=document.getElementById('eh-data');
+  if(!dt.value)dt.value=today();
+  const per=document.getElementById('eh-periodo');
+  if(!per.dataset.init){per.value=PER_LABELS[curPeriodo()];per.dataset.init='1';per.onchange=montaHoras;}
+  document.getElementById('eh-produto').value=navioAtual.produto||'';
+  const sig=document.getElementById('eh-par-sigla');
+  if(!sig.dataset.init){
+    sig.innerHTML='<option value="">— sem paralisação —</option>'+
+      Object.entries(PARALISACOES).map(([k,v])=>`<option value="${k}">${k} — ${v}</option>`).join('');
+    sig.dataset.init='1';
+  }
+  montaHoras(); montaTernos();
+  escutaHoras();
+}
+
+function montaHoras(){
+  const per=document.getElementById('eh-periodo').value;
+  const sel=document.getElementById('eh-hora');
+  sel.innerHTML=(HORAS_PERIODO[per]||[]).map(h=>`<option>${h}</option>`).join('');
+  escutaHoras();
+}
+
+function montaTernos(){
+  const n=navioAtual?.ternos||2;
+  const opts=Object.keys(navioAtual.poroes||{}).map(p=>`<option value="${p}">Porão ${p}</option>`).join('');
+  document.getElementById('eh-ternos').innerHTML=[...Array(n)].map((_,i)=>`
+    <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin:14px 0 7px;text-transform:uppercase;letter-spacing:.4px;">${i+1}º Terno</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;">
+      <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Porão</label><select id="eh-t${i}-porao"><option value="">—</option>${opts}</select></div>
+      <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Atados</label><input type="text" inputmode="decimal" id="eh-t${i}-at" placeholder="0" oninput="calcHora()"></div>
+      <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Toneladas</label><input type="text" inputmode="decimal" id="eh-t${i}-ton" placeholder="0" oninput="calcHora()"></div>
+      <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Carretas</label><input type="text" inputmode="decimal" id="eh-t${i}-cat" placeholder="0" oninput="calcHora()"></div>
+    </div>`).join('');
+  calcHora();
+}
+
+function ternosDoForm(){
+  const n=navioAtual?.ternos||2, arr=[];
+  for(let i=0;i<n;i++){
+    const porao=document.getElementById(`eh-t${i}-porao`)?.value||'';
+    const ton=nDec(`eh-t${i}-ton`)||0;
+    if(!porao&&!ton)continue;
+    arr.push({terno:i+1,porao:porao?parseInt(porao):null,
+      atados:nDec(`eh-t${i}-at`)||0, ton, carretas:nDec(`eh-t${i}-cat`)||0});
+  }
+  return arr;
+}
+
+function calcHora(){
+  const t=ternosDoForm();
+  const soma=t.reduce((s,x)=>s+x.ton,0);
+  const carr=t.reduce((s,x)=>s+x.carretas,0);
+  document.getElementById('eh-resumo').textContent=
+    soma>0?`Soma da hora: ${fmtT(soma)} t · ${fmtT(soma)} t/h · ${carr} carretas`:'Preencha as toneladas por terno.';
+}
+
+async function salvarHora(){
+  if(!navioAtual)return;
+  const ternos=ternosDoForm();
+  if(!ternos.length||!ternos.some(t=>t.ton>0)){toast('Informe as toneladas de ao menos um terno.','danger');return;}
+  const sigla=document.getElementById('eh-par-sigla').value;
+  const rec={
+    navioId:navioAtual.id, navio:navioAtual.nome, berco:32,
+    data:document.getElementById('eh-data').value||today(),
+    periodo:document.getElementById('eh-periodo').value,
+    hora:document.getElementById('eh-hora').value,
+    produto:document.getElementById('eh-produto').value.trim(),
+    ternos,
+    somaTon:+ternos.reduce((s,t)=>s+t.ton,0).toFixed(2),
+    somaAtados:+ternos.reduce((s,t)=>s+t.atados,0).toFixed(2),
+    somaCarretas:+ternos.reduce((s,t)=>s+t.carretas,0).toFixed(2),
+    paralisacao: sigla?{sigla,motivo:PARALISACOES[sigla],obs:document.getElementById('eh-par-obs').value.trim()}:null,
+    lancadoPor:currentLider?.nome||'', funcao:currentLider?.funcao||'',
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try{
+    await db.collection('embarque_horas').add(rec);
+    toast('Hora lançada.','success');
+    ['eh-par-obs'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('eh-par-sigla').value='';
+    const n=navioAtual.ternos||2;
+    for(let i=0;i<n;i++)['at','ton','cat'].forEach(k=>{const e=document.getElementById(`eh-t${i}-${k}`);if(e)e.value='';});
+    calcHora();
+    // avança para a próxima hora do período
+    const sel=document.getElementById('eh-hora');
+    if(sel.selectedIndex<sel.options.length-1)sel.selectedIndex++;
+  }catch(e){toast('Erro ao salvar: '+e.message,'danger');}
+}
+
+// Escuta ao vivo as horas do dia — a grade e o saldo se atualizam sozinhos
+function escutaHoras(){
+  if(!db||!navioAtual)return;
+  if(embhUnsub){embhUnsub();embhUnsub=null;}
+  const dia=document.getElementById('eh-data').value||today();
+  try{
+    embhUnsub=db.collection('embarque_horas')
+      .where('navioId','==',navioAtual.id)
+      .onSnapshot(snap=>{
+        const todas=snap.docs.map(d=>({id:d.id,...d.data()}));
+        pintaSaldoNavio(todas);
+        pintaGrade(todas.filter(h=>h.data===dia&&h.periodo===document.getElementById('eh-periodo').value));
+      },e=>console.error(e));
+  }catch(e){console.error(e);}
+}
+
+function pintaSaldoNavio(todas){
+  const total=navioAtual.total||0;
+  const carregado=todas.reduce((s,h)=>s+(h.somaTon||0),0);
+  const saldo=Math.max(0,total-carregado);
+  const pct=total?(carregado/total*100):0;
+
+  document.getElementById('nv-nome').textContent=navioAtual.nome+(navioAtual.viagem?' · '+navioAtual.viagem:'');
+  document.getElementById('nv-sub').textContent=
+    [navioAtual.produto,navioAtual.destino,'Berço 32',(navioAtual.ternos||2)+' ternos'].filter(Boolean).join(' · ');
+  document.getElementById('nv-stats').innerHTML=`
+    <div class="mini-stat"><div class="v">${fmtT(total)}</div><div class="l">Total (t)</div></div>
+    <div class="mini-stat t"><div class="v">${fmtT(carregado)}</div><div class="l">Embarcado (t)</div></div>
+    <div class="mini-stat g"><div class="v">${fmtT(saldo)}</div><div class="l">Saldo (t)</div></div>
+    <div class="mini-stat"><div class="v">${pct.toFixed(1)}%</div><div class="l">Concluído</div></div>`;
+
+  // saldo por porão
+  const porPorao={};
+  todas.forEach(h=>(h.ternos||[]).forEach(t=>{if(t.porao)porPorao[t.porao]=(porPorao[t.porao]||0)+(t.ton||0);}));
+  document.getElementById('nv-poroes').innerHTML=Object.entries(navioAtual.poroes||{}).map(([p,prev])=>{
+    const feito=porPorao[p]||0, rest=Math.max(0,prev-feito), pc=prev?Math.min(100,feito/prev*100):0;
+    return `<div style="display:grid;grid-template-columns:74px 1fr 110px;align-items:center;gap:10px;margin-bottom:7px;">
+      <div style="font-size:11px;font-weight:700;">Porão ${p}</div>
+      <div style="background:var(--bg);border-radius:4px;height:15px;overflow:hidden;">
+        <div style="height:100%;width:${pc}%;background:${pc>=100?'var(--green)':'var(--teal)'};border-radius:4px;"></div>
+      </div>
+      <div style="font-size:10.5px;font-weight:700;text-align:right;">${fmtT(feito)} / ${fmtT(prev)} t</div>
+    </div>`;
+  }).join('');
+}
+
+function pintaGrade(horas){
+  const per=document.getElementById('eh-periodo').value;
+  const ordem=HORAS_PERIODO[per]||[];
+  const tb=document.getElementById('eh-grade');
+  const porHora={}; horas.forEach(h=>{porHora[h.hora]=h;});
+  let acum=0;
+  tb.innerHTML=ordem.map(h=>{
+    const r=porHora[h];
+    if(!r)return `<tr style="opacity:.4;"><td>${h}</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
+    acum+=r.somaTon||0;
+    const cel=i=>{const t=(r.ternos||[]).find(x=>x.terno===i);
+      return t?`P${t.porao||'—'} · ${fmtT(t.ton)} t · ${t.carretas||0} car`:'—';};
+    const par=r.paralisacao?`<span class="badge br" title="${r.paralisacao.motivo}">${r.paralisacao.sigla}</span>`:'—';
+    return `<tr><td><b>${h}</b></td><td>${cel(1)}</td><td>${cel(2)}</td><td><b>${fmtT(r.somaTon)}</b></td><td>${fmtT(r.somaTon)}</td><td>${par}</td></tr>`;
+  }).join('')+
+  `<tr style="background:rgba(0,74,153,.06);"><td><b>TOTAL</b></td><td></td><td></td><td><b>${fmtT(acum)}</b></td><td><b>${fmtT(acum/Math.max(1,horas.length))} méd.</b></td><td></td></tr>`;
+}
+
+const INV_ITENS=[{"id": 1, "nome": "Cinto de Segurança - Hercules", "min": 8, "max": 16}, {"id": 2, "nome": "Cinto de Segurança com Lombar - Hercules", "min": 8, "max": 16}, {"id": 3, "nome": "Cone Barril", "min": 13, "max": 26}, {"id": 4, "nome": "Escada Paralela", "min": 4, "max": 8}, {"id": 5, "nome": "Galão de água", "min": 3, "max": 6}, {"id": 6, "nome": "Plataforma", "min": 3, "max": 3}, {"id": 7, "nome": "Rede de avarias", "min": 2, "max": 4}, {"id": 8, "nome": "Corda Sisal", "min": 70, "max": 140}, {"id": 9, "nome": "Trava Quedas - Hercules", "min": 8, "max": 16}, {"id": 10, "nome": "Cinto de Segurança com Lombar -Steelflex", "min": 12, "max": 24}, {"id": 11, "nome": "Cinto de Segurança - Steelflex", "min": 12, "max": 24}, {"id": 12, "nome": "Trava Quedas - Steelflex", "min": 12, "max": 24}, {"id": 13, "nome": "Escada Plataforma", "min": 2, "max": 4}, {"id": 14, "nome": "Capa de Rádio", "min": 24, "max": null}, {"id": 15, "nome": "Rádio", "min": 24, "max": null}, {"id": 16, "nome": "Carregador e Fonte da Rádio", "min": 24, "max": null}, {"id": 17, "nome": "Tablet", "min": 5, "max": null}, {"id": 18, "nome": "Coletor", "min": 10, "max": null}, {"id": 19, "nome": "Assoprador", "min": null, "max": null}, {"id": 20, "nome": "Cone", "min": null, "max": null}, {"id": 21, "nome": "Vassouras", "min": 10, "max": null}, {"id": 22, "nome": "Cinta", "min": null, "max": null}, {"id": 23, "nome": "Gaiola de Resgate", "min": 1, "max": null}, {"id": 24, "nome": "Talha", "min": 6, "max": null}, {"id": 25, "nome": "Lona", "min": null, "max": null}, {"id": 26, "nome": "Big Bag", "min": null, "max": null}, {"id": 27, "nome": "Sinalizadores", "min": null, "max": null}, {"id": 28, "nome": "Alicate", "min": null, "max": null}, {"id": 29, "nome": "Fita Stretch", "min": null, "max": null}];
+
+// ══════════════════════════════════════════════════════════
+//  INVENTÁRIO DE MATERIAIS  —  contagem quinzenal, liderança
+// ══════════════════════════════════════════════════════════
+let invUltima=null;
+
+async function loadInv(){
+  const box=document.getElementById('inv-lista');
+  document.getElementById('inv-data').value=document.getElementById('inv-data').value||today();
+  document.getElementById('inv-resp').textContent=currentLider?.nome||'—';
+  document.getElementById('inv-turno').textContent=currentLider?.turno||'—';
+
+  // última contagem, para mostrar o valor anterior de cada item
+  let ant={};
+  if(db){
+    try{
+      const snap=await db.collection('inventarios').orderBy('data','desc').limit(1).get();
+      if(!snap.empty){invUltima={id:snap.docs[0].id,...snap.docs[0].data()};
+        (invUltima.itens||[]).forEach(i=>{ant[i.id]=i.qtd;});}
+    }catch(e){console.error(e);}
+  }
+  box.innerHTML=INV_ITENS.map(it=>{
+    const lim=[it.min!=null?'mín '+it.min:'',it.max!=null?'máx '+it.max:''].filter(Boolean).join(' · ');
+    const prev=ant[it.id]!=null?`<span style="font-size:10px;color:#aab4be;">anterior ${ant[it.id]}</span>`:'';
+    return `<div class="inv-row" id="invrow-${it.id}" style="display:grid;grid-template-columns:1fr 96px;gap:10px;align-items:center;padding:9px 11px;border-radius:8px;margin-bottom:5px;background:var(--bg);">
+      <div>
+        <div style="font-size:12.5px;font-weight:600;line-height:1.3;">${it.nome}</div>
+        <div style="font-size:10px;color:#7a8fa6;font-weight:600;">${lim||'sem limite definido'} ${prev}</div>
+      </div>
+      <input type="text" inputmode="numeric" id="inv-q-${it.id}" placeholder="—"
+        oninput="checaItem(${it.id})"
+        style="text-align:center;font-weight:800;font-size:14px;padding:8px;border:1.5px solid var(--border);border-radius:7px;">
+    </div>`;
+  }).join('');
+  if(invUltima){
+    document.getElementById('inv-ultima').textContent=
+      `Última contagem: ${fmtDate(invUltima.data)} · ${invUltima.responsavel||'—'} · turno ${invUltima.turno||'—'}`;
+  }
+  atualizaResumoInv();
+}
+
+function checaItem(id){
+  const it=INV_ITENS.find(x=>x.id===id);
+  const v=nDec('inv-q-'+id);
+  const row=document.getElementById('invrow-'+id);
+  const inp=document.getElementById('inv-q-'+id);
+  row.style.background='var(--bg)'; inp.style.borderColor='var(--border)';
+  if(v!=null&&it.min!=null&&v<it.min){
+    row.style.background='rgba(217,83,79,.10)'; inp.style.borderColor='var(--danger)';
+  }else if(v!=null&&it.max!=null&&v>it.max){
+    row.style.background='rgba(232,132,26,.10)'; inp.style.borderColor='var(--orange)';
+  }
+  atualizaResumoInv();
+}
+
+function itensContados(){
+  return INV_ITENS.map(it=>({id:it.id,nome:it.nome,min:it.min,max:it.max,qtd:nDec('inv-q-'+it.id)}))
+                  .filter(i=>i.qtd!=null);
+}
+
+function atualizaResumoInv(){
+  const c=itensContados();
+  const abaixo=c.filter(i=>i.min!=null&&i.qtd<i.min);
+  const acima=c.filter(i=>i.max!=null&&i.qtd>i.max);
+  document.getElementById('inv-resumo').innerHTML=
+    `<b>${c.length}</b> de ${INV_ITENS.length} itens contados`+
+    (abaixo.length?` · <span style="color:var(--danger);">${abaixo.length} abaixo do mínimo</span>`:'')+
+    (acima.length?` · <span style="color:var(--orange);">${acima.length} acima do máximo</span>`:'');
+}
+
+function msgInventario(){
+  const c=itensContados();
+  if(!c.length)return '';
+  const d=document.getElementById('inv-data').value||today();
+  const abaixo=c.filter(i=>i.min!=null&&i.qtd<i.min);
+  let m=`INVENTÁRIO T32 — ${fmtDate(d)}\n`;
+  m+=`Contagem: ${currentLider?.nome||'—'} · Turno ${currentLider?.turno||'—'}\n\n`;
+  c.forEach(i=>{m+=`${i.nome}: ${i.qtd}\n`;});
+  if(abaixo.length){
+    m+=`\n⚠️ ABAIXO DO MÍNIMO (${abaixo.length})\n`;
+    abaixo.forEach(i=>{m+=`${i.nome}: ${i.qtd} (mín ${i.min})\n`;});
+  }
+  return m;
+}
+
+function copiarInv(){
+  const m=msgInventario();
+  if(!m){toast('Conte ao menos um item.','danger');return;}
+  navigator.clipboard.writeText(m).then(
+    ()=>toast('Mensagem copiada — cole no WhatsApp.','success'),
+    ()=>{const t=document.createElement('textarea');t.value=m;document.body.appendChild(t);t.select();
+         document.execCommand('copy');t.remove();toast('Mensagem copiada.','success');});
+}
+
+async function salvarInv(){
+  const c=itensContados();
+  if(!c.length){toast('Conte ao menos um item.','danger');return;}
+  const rec={
+    data:document.getElementById('inv-data').value||today(),
+    responsavel:currentLider?.nome||'', matricula:currentLider?.mat||null,
+    turno:currentLider?.turno||'', funcao:currentLider?.funcao||'',
+    itens:c, totalContados:c.length,
+    abaixoMinimo:c.filter(i=>i.min!=null&&i.qtd<i.min).length,
+    obs:document.getElementById('inv-obs').value.trim(),
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try{
+    await db.collection('inventarios').add(rec);
+    toast('Inventário salvo.','success');
+    loadInv();
+  }catch(e){toast('Erro ao salvar: '+e.message,'danger');}
+}
+
 // ══ CONTROLE DE ACESSO POR FUNÇÃO ══
 // Coordenador vê os 4 turnos. Supervisor, assistente e controlador ficam no próprio turno.
 // As abas Auxiliares e Operadores são só de supervisor e coordenador.
@@ -1398,7 +1885,7 @@ function aplicarEscopo(){
   });
 
   // esconde as abas de gente para assistente e controlador
-  const tabs=['dash','hist','manut','maqhist','turnos','auxind','opind'];
+  const tabs=['dash','embh','hist','manut','maqhist','turnos','auxind','opind','inv'];
   document.querySelectorAll('#kpi-nav .tab').forEach((el,i)=>{
     const oculta=(tabs[i]==='auxind'||tabs[i]==='opind')&&!podeGente;
     el.style.display=oculta?'none':'';
@@ -1406,13 +1893,15 @@ function aplicarEscopo(){
 }
 
 function showKTab(t){
-  const tabs=['dash','hist','manut','maqhist','turnos','auxind','opind'];
+  const tabs=['dash','embh','hist','manut','maqhist','turnos','auxind','opind','inv'];
   if((t==='auxind'||t==='opind')&&!(ehCoordenador()||ehSupervisor())){
     toast('Acesso restrito a supervisor e coordenação.','danger');return;
   }
   tabs.forEach(id=>document.getElementById('kt-'+id).style.display=id===t?'block':'none');
   document.querySelectorAll('#kpi-nav .tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
   if(t==='dash')setTimeout(()=>loadKPI(),50);
+  if(t==='embh')loadEmbh();
+  if(t==='inv')loadInv();
   if(t==='hist')loadHist();
   if(t==='manut')loadManut();
   if(t==='maqhist')loadMaqHist();
@@ -1435,12 +1924,15 @@ async function loadKPI(){
   const tabT=docs.reduce((s,d)=>s+(d.recursos?.tablets?.qtd||0),0);
   const defT=docs.filter(d=>d.recursos?.defeitos?.ativo).length;
   const tpaT=docs.filter(d=>d.recursos?.tpa?.ativo).length;
+  // empilhadeiras distintas usadas no período
+  const empSet=new Set();
+  docs.forEach(d=>(d.recursos?.empilhadeiras||[]).forEach(m=>{if(m.maq)empSet.add(m.maq);}));
   document.getElementById('kpi-stats').innerHTML=`
     <div class="sc"><div class="val">${docs.length}</div><div class="lbl">Registros</div></div>
     <div class="sc t"><div class="val">${colT}</div><div class="lbl">Coletores</div></div>
     <div class="sc g"><div class="val">${tabT}</div><div class="lbl">Tablets</div></div>
     <div class="sc o"><div class="val">${tpaT}</div><div class="lbl">TPA's</div></div>
-    <div class="sc r"><div class="val">${defT}</div><div class="lbl">Defeitos</div></div>`;
+    <div class="sc"><div class="val">${empSet.size}</div><div class="lbl">Empilhadeiras em uso</div></div>`;
   // Chart Atividades por período
   const perCount={'07×13':{},'13×19':{},'19×01':{},'01×07':{}};
   docs.forEach(d=>{const p=d.periodo||'—';if(!perCount[p])perCount[p]={};perCount[p][d.atividade]=(perCount[p][d.atividade]||0)+1;});
