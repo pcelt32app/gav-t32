@@ -591,12 +591,19 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
   <div class="card"><h3><div class="icon ib">📋</div>Registros do Período</h3>
     <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Hora</th><th>Atividade</th><th>Detalhe</th></tr></thead><tbody id="suc-tbody"></tbody></table></div>
   </div>
-  <div class="flex-end"><button class="btn btn-primary" onclick="goForm()">➕ Novo Registro</button></div>
+  <div class="flex-end" style="gap:8px;">
+    <button class="btn btn-sec" onclick="abrirTV()">📺 Gestão à Vista</button>
+    <button class="btn btn-primary" onclick="goForm()">➕ Novo Registro</button>
+  </div>
 </div>
 
 <!-- ════ KPI ════ -->
 <div class="page" id="pg-kpi">
   <div id="kpi-gate" style="display:none;">
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:10px;">
+    <button class="btn btn-sm" onclick="abrirTV()"
+      style="background:var(--teal);color:#fff;font-weight:800;">📺 Gestão à Vista</button>
+  </div>
   <div id="admin-bar" style="display:none;gap:8px;justify-content:flex-end;margin-bottom:10px;flex-wrap:wrap;">
     <button id="btn-demo" class="btn btn-sm" onclick="cargaDemo()"
       style="background:var(--danger);color:#fff;font-weight:800;letter-spacing:.03em;">⚠ CARGA DEMO</button>
@@ -1121,6 +1128,8 @@ function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.
 function goForm(){showPage('pg-form');showFormTab('atividade');recDone={};document.querySelectorAll('.rtab').forEach(t=>{t.classList.remove('done','active');});document.getElementById('rt-coletores').classList.add('active');}
 
 // Sai do formulário sem lançar nada e mostra como está a operação do período
+function abrirTV(){window.open('tv.html','_blank');}
+
 function verOperacao(){resetForm();showSucesso(null);}
 
 // ══ FORM TABS ══

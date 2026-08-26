@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operação T32 — Gestão à Vista</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<style>
+  :root{
+    --azul:#004A99; --teal:#038799; --verde:#8ABA3D; --orange:#E8841A; --danger:#D9534F;
+    --bg:#0F1B2A; --card:#17273B; --linha:rgba(255,255,255,.08);
+    --txt:#EAF0F6; --muted:#8FA6BF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--txt);
+       display:flex;flex-direction:column;overflow:hidden}
+
+  header{background:linear-gradient(90deg,var(--azul),#0a3a72);padding:10px 20px;
+         display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;flex:none}
+  .marca{display:flex;align-items:center;gap:11px}
+  .aovivo{display:flex;align-items:center;gap:6px;background:rgba(217,83,79,.92);padding:4px 10px;
+          border-radius:5px;font-size:10px;font-weight:800;letter-spacing:.09em}
+  .aovivo .p{width:6px;height:6px;border-radius:50%;background:#fff;animation:pulso 1.8s ease-in-out infinite}
+  @keyframes pulso{0%,100%{opacity:1}50%{opacity:.2}}
+  .marca .n{font-size:17px;font-weight:800;letter-spacing:.04em}
+  .marca .s{font-size:11px;color:rgba(255,255,255,.6)}
+  .hdr-d{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .relogio{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .turno{text-align:right;line-height:1.15}
+  .turno .c{font-size:9px;color:rgba(255,255,255,.55);font-weight:700;letter-spacing:.09em}
+  .turno .v{font-size:16px;font-weight:800}
+  .conx{font-size:10px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums;text-align:right;line-height:1.3}
+  .conx b{color:var(--verde)}
+  .conx.off b{color:var(--danger)}
+
+  .grade{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+         gap:10px;padding:10px;min-height:0}
+  .q{background:var(--card);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;
+     min-height:0;overflow:hidden;border:1px solid var(--linha)}
+  .q h2{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+        margin-bottom:11px;display:flex;align-items:center;gap:8px;flex:none}
+  .q h2::before{content:'';width:3px;height:13px;border-radius:2px;background:var(--teal)}
+  .q.d h2::before{background:var(--orange)} .q.e h2::before{background:var(--azul)}
+  .q.o h2::before{background:var(--verde)} .q.s h2::before{background:var(--teal)}
+  .corpo{flex:1;overflow:auto;min-height:0}
+  .corpo::-webkit-scrollbar{width:5px} .corpo::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:3px}
+
+  .nums{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;flex:none}
+  .nn{flex:1;min-width:88px}
+  .nn .v{font-size:26px;font-weight:800;line-height:1.05;letter-spacing:-.02em}
+  .nn .l{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+  .nn.t .v{color:var(--teal)} .nn.g .v{color:var(--verde)} .nn.o .v{color:var(--orange)} .nn.r .v{color:var(--danger)}
+
+  .prog{margin-bottom:11px}
+  .prog .tp{display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;margin-bottom:5px}
+  .prog .tp span{color:var(--muted);font-weight:600}
+  .barra{background:rgba(255,255,255,.09);border-radius:5px;height:16px;overflow:hidden}
+  .barra i{display:block;height:100%;border-radius:5px;background:var(--teal);transition:width .6s}
+  .barra i.ok{background:var(--verde)}
+
+  .vias{margin-top:6px}
+  .via{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+  .via .vn{font-size:8.5px;font-weight:800;color:var(--muted);width:22px;flex:none}
+  .vg{flex:1;height:11px;border-radius:2px;background:rgba(255,255,255,.09)}
+  .vg.ok{background:#2f6fd0}
+
+  .poroes{display:flex;align-items:flex-end;gap:9px;height:120px;margin-top:4px}
+  .po{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .po .pc{font-size:10px;font-weight:800;margin-bottom:4px}
+  .po .cx{width:100%;max-width:44px;background:rgba(255,255,255,.09);border-radius:4px 4px 0 0;
+          display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+  .po .cx i{display:block;width:100%;background:var(--teal);transition:height .6s}
+  .po .cx i.ok{background:var(--verde)}
+  .po .nm{font-size:9px;font-weight:700;color:var(--muted);margin-top:5px}
+
+  .frente{background:rgba(255,255,255,.045);border-radius:9px;padding:10px 12px;margin-bottom:8px;
+          border-left:3px solid var(--teal)}
+  .frente .t{font-size:12.5px;font-weight:800;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .frente .t em{font-style:normal;font-size:10px;color:var(--verde);font-weight:800}
+  .frente .d{font-size:10.5px;color:var(--muted);font-weight:600;margin-top:3px;line-height:1.45}
+  .pill{display:inline-block;font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;
+        background:rgba(3,135,153,.28);color:#7fd8e4;margin-right:4px}
+  .pill.o{background:rgba(232,132,26,.25);color:#f0b06a}
+
+  .vaos{display:flex;gap:2px;align-items:flex-end;height:74px;margin-top:8px}
+  .vv{flex:1;background:rgba(255,255,255,.08);border-radius:3px 3px 0 0;position:relative;min-width:5px}
+  .vv i{position:absolute;bottom:0;left:0;width:100%;background:var(--teal);border-radius:3px 3px 0 0}
+  .vv i.cheio{background:var(--verde)}
+  .vzr{display:flex;gap:2px;margin-top:3px}
+  .vzr span{flex:1;font-size:6.5px;color:var(--muted);text-align:center;font-weight:700;min-width:5px}
+
+  .vazio{font-size:12px;color:var(--muted);text-align:center;padding:24px 8px;line-height:1.6}
+
+  @media(max-width:900px){
+    body{overflow:auto}
+    .grade{grid-template-columns:1fr;grid-template-rows:none;height:auto}
+    .q{min-height:290px}
+    .relogio{font-size:18px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca">
+    <span class="aovivo"><span class="p"></span>AO VIVO</span>
+    <div><div class="n">OPERAÇÃO T32</div><div class="s">Portocel · Santos · Berço 32</div></div>
+  </div>
+  <div class="hdr-d">
+    <div class="relogio" id="relogio">--:--:--</div>
+    <div class="turno"><div class="c">TURNO · PERÍODO</div><div class="v" id="turno">—</div></div>
+    <div class="conx" id="conx"><b>●</b> conectando<br><span id="ult"></span></div>
+  </div>
+</header>
+
+<div class="grade">
+  <div class="q d"><h2>Descarga</h2><div class="corpo" id="q-descarga"></div></div>
+  <div class="q e"><h2>Embarque</h2><div class="corpo" id="q-embarque"></div></div>
+  <div class="q o"><h2>Operação T32 — frentes de trabalho</h2><div class="corpo" id="q-operacao"></div></div>
+  <div class="q s"><h2>Estoque do armazém</h2><div class="corpo" id="q-estoque"></div></div>
+</div>
+
+<script>
+const DADOS={"escala":{"2026-01-01":["C","C","B","B"],"2026-01-02":["C","C","B","B"],"2026-01-03":["D","D","C","C"],"2026-01-04":["D","D","C","C"],"2026-01-05":["A","A","D","D"],"2026-01-06":["A","A","D","D"],"2026-01-07":["B","B","A","A"],"2026-01-08":["B","B","A","A"],"2026-01-09":["C","C","B","B"],"2026-01-10":["C","C","B","B"],"2026-01-11":["D","D","C","C"],"2026-01-12":["D","D","C","C"],"2026-01-13":["A","A","D","D"],"2026-01-14":["A","A","D","D"],"2026-01-15":["B","B","A","A"],"2026-01-16":["B","B","A","A"],"2026-01-17":["C","C","B","B"],"2026-01-18":["C","C","B","B"],"2026-01-19":["D","D","C","C"],"2026-01-20":["D","D","C","C"],"2026-01-21":["A","A","D","D"],"2026-01-22":["A","A","D","D"],"2026-01-23":["B","B","A","A"],"2026-01-24":["B","B","A","A"],"2026-01-25":["C","C","B","B"],"2026-01-26":["C","C","B","B"],"2026-01-27":["D","D","C","C"],"2026-01-28":["D","D","C","C"],"2026-01-29":["A","A","D","D"],"2026-01-30":["A","A","D","D"],"2026-01-31":["B","B","A","A"],"2026-02-01":["B","B","A","A"],"2026-02-02":["C","C","B","B"],"2026-02-03":["C","C","B","B"],"2026-02-04":["D","D","C","C"],"2026-02-05":["D","D","C","C"],"2026-02-06":["A","A","D","D"],"2026-02-07":["A","A","D","D"],"2026-02-08":["B","B","A","A"],"2026-02-09":["B","B","A","A"],"2026-02-10":["C","C","B","B"],"2026-02-11":["C","C","B","B"],"2026-02-12":["D","D","C","C"],"2026-02-13":["D","D","C","C"],"2026-02-14":["A","A","D","D"],"2026-02-15":["A","A","D","D"],"2026-02-16":["B","B","A","A"],"2026-02-17":["B","B","A","A"],"2026-02-18":["C","C","B","B"],"2026-02-19":["C","C","B","B"],"2026-02-20":["D","D","C","C"],"2026-02-21":["D","D","C","C"],"2026-02-22":["A","A","D","D"],"2026-02-23":["A","A","D","D"],"2026-02-24":["B","B","A","A"],"2026-02-25":["B","B","A","A"],"2026-02-26":["C","C","B","B"],"2026-02-27":["C","C","B","B"],"2026-02-28":["D","D","C","C"],"2026-03-01":["D","D","C","C"],"2026-03-02":["A","A","D","D"],"2026-03-03":["A","A","D","D"],"2026-03-04":["B","B","A","A"],"2026-03-05":["B","B","A","A"],"2026-03-06":["C","C","B","B"],"2026-03-07":["C","C","B","B"],"2026-03-08":["D","D","C","C"],"2026-03-09":["D","D","C","C"],"2026-03-10":["A","A","D","D"],"2026-03-11":["A","A","D","D"],"2026-03-12":["B","B","A","A"],"2026-03-13":["B","B","A","A"],"2026-03-14":["C","C","B","B"],"2026-03-15":["C","C","B","B"],"2026-03-16":["D","D","C","C"],"2026-03-17":["D","D","C","C"],"2026-03-18":["A","A","D","D"],"2026-03-19":["A","A","D","D"],"2026-03-20":["B","B","A","A"],"2026-03-21":["B","B","A","A"],"2026-03-22":["C","C","B","B"],"2026-03-23":["C","C","B","B"],"2026-03-24":["D","D","C","C"],"2026-03-25":["D","D","C","C"],"2026-03-26":["A","A","D","D"],"2026-03-27":["A","A","D","D"],"2026-03-28":["B","B","A","A"],"2026-03-29":["B","B","A","A"],"2026-03-30":["C","C","B","B"],"2026-03-31":["C","C","B","B"],"2026-04-01":["D","D","C","C"],"2026-04-02":["D","D","C","C"],"2026-04-03":["A","A","D","D"],"2026-04-04":["A","A","D","D"],"2026-04-05":["B","B","A","A"],"2026-04-06":["B","B","A","A"],"2026-04-07":["C","C","B","B"],"2026-04-08":["C","C","B","B"],"2026-04-09":["D","D","C","C"],"2026-04-10":["D","D","C","C"],"2026-04-11":["A","A","D","D"],"2026-04-12":["A","A","D","D"],"2026-04-13":["B","B","A","A"],"2026-04-14":["B","B","A","A"],"2026-04-15":["C","C","B","B"],"2026-04-16":["C","C","B","B"],"2026-04-17":["D","D","C","C"],"2026-04-18":["D","D","C","C"],"2026-04-19":["A","A","D","D"],"2026-04-20":["A","A","D","D"],"2026-04-21":["B","B","A","A"],"2026-04-22":["B","B","A","A"],"2026-04-23":["C","C","B","B"],"2026-04-24":["C","C","B","B"],"2026-04-25":["D","D","C","C"],"2026-04-26":["D","D","C","C"],"2026-04-27":["A","A","D","D"],"2026-04-28":["A","A","D","D"],"2026-04-29":["B","B","A","A"],"2026-04-30":["B","B","A","A"],"2026-05-01":["C","C","B","B"],"2026-05-02":["C","C","B","B"],"2026-05-03":["D","D","C","C"],"2026-05-04":["D","D","C","C"],"2026-05-05":["A","A","D","D"],"2026-05-06":["A","A","D","D"],"2026-05-07":["B","B","A","A"],"2026-05-08":["B","B","A","A"],"2026-05-09":["C","C","B","B"],"2026-05-10":["C","C","B","B"],"2026-05-11":["D","D","C","C"],"2026-05-12":["D","D","C","C"],"2026-05-13":["A","A","D","D"],"2026-05-14":["A","A","D","D"],"2026-05-15":["B","B","A","A"],"2026-05-16":["B","B","A","A"],"2026-05-17":["C","C","B","B"],"2026-05-18":["C","C","B","B"],"2026-05-19":["D","D","C","C"],"2026-05-20":["D","D","C","C"],"2026-05-21":["A","A","D","D"],"2026-05-22":["A","A","D","D"],"2026-05-23":["B","B","A","A"],"2026-05-24":["B","B","A","A"],"2026-05-25":["C","C","B","B"],"2026-05-26":["C","C","B","B"],"2026-05-27":["D","D","C","C"],"2026-05-28":["D","D","C","C"],"2026-05-29":["A","A","D","D"],"2026-05-30":["A","A","D","D"],"2026-05-31":["B","B","A","A"],"2026-06-01":["B","B","A","A"],"2026-06-02":["C","C","B","B"],"2026-06-03":["C","C","B","B"],"2026-06-04":["D","D","C","C"],"2026-06-05":["D","D","C","C"],"2026-06-06":["A","A","D","D"],"2026-06-07":["A","A","D","D"],"2026-06-08":["B","B","A","A"],"2026-06-09":["B","B","A","A"],"2026-06-10":["C","C","B","B"],"2026-06-11":["C","C","B","B"],"2026-06-12":["D","D","C","C"],"2026-06-13":["D","D","C","C"],"2026-06-14":["A","A","D","D"],"2026-06-15":["A","A","D","D"],"2026-06-16":["B","B","A","A"],"2026-06-17":["B","B","A","A"],"2026-06-18":["C","C","B","B"],"2026-06-19":["C","C","B","B"],"2026-06-20":["D","D","C","C"],"2026-06-21":["D","D","C","C"],"2026-06-22":["A","A","D","D"],"2026-06-23":["A","A","D","D"],"2026-06-24":["B","B","A","A"],"2026-06-25":["B","B","A","A"],"2026-06-26":["C","C","B","B"],"2026-06-27":["C","C","B","B"],"2026-06-28":["D","D","C","C"],"2026-06-29":["D","D","C","C"],"2026-06-30":["A","A","D","D"],"2026-07-01":["A","A","D","D"],"2026-07-02":["B","B","A","A"],"2026-07-03":["B","B","A","A"],"2026-07-04":["C","C","B","B"],"2026-07-05":["C","C","B","B"],"2026-07-06":["D","D","C","C"],"2026-07-07":["D","D","C","C"],"2026-07-08":["A","A","D","D"],"2026-07-09":["A","A","D","D"],"2026-07-10":["B","B","A","A"],"2026-07-11":["B","B","A","A"],"2026-07-12":["C","C","B","B"],"2026-07-13":["C","C","B","B"],"2026-07-14":["D","D","C","C"],"2026-07-15":["D","D","C","C"],"2026-07-16":["A","A","D","D"],"2026-07-17":["A","A","D","D"],"2026-07-18":["B","B","A","A"],"2026-07-19":["B","B","A","A"],"2026-07-20":["C","C","B","B"],"2026-07-21":["C","C","B","B"],"2026-07-22":["D","D","C","C"],"2026-07-23":["D","D","C","C"],"2026-07-24":["A","A","D","D"],"2026-07-25":["A","A","D","D"],"2026-07-26":["B","B","A","A"],"2026-07-27":["B","B","A","A"],"2026-07-28":["C","C","B","B"],"2026-07-29":["C","C","B","B"],"2026-07-30":["D","D","C","C"],"2026-07-31":["D","D","C","C"],"2026-08-01":["A","A","D","D"],"2026-08-02":["A","A","D","D"],"2026-08-03":["B","B","A","A"],"2026-08-04":["B","B","A","A"],"2026-08-05":["C","C","B","B"],"2026-08-06":["C","C","B","B"],"2026-08-07":["D","D","C","C"],"2026-08-08":["D","D","C","C"],"2026-08-09":["A","A","D","D"],"2026-08-10":["A","A","D","D"],"2026-08-11":["B","B","A","A"],"2026-08-12":["B","B","A","A"],"2026-08-13":["C","C","B","B"],"2026-08-14":["C","C","B","B"],"2026-08-15":["D","D","C","C"],"2026-08-16":["D","D","C","C"],"2026-08-17":["A","A","D","D"],"2026-08-18":["A","A","D","D"],"2026-08-19":["B","B","A","A"],"2026-08-20":["B","B","A","A"],"2026-08-21":["C","C","B","B"],"2026-08-22":["C","C","B","B"],"2026-08-23":["D","D","C","C"],"2026-08-24":["D","D","C","C"],"2026-08-25":["A","A","D","D"],"2026-08-26":["A","A","D","D"],"2026-08-27":["B","B","A","A"],"2026-08-28":["B","B","A","A"],"2026-08-29":["C","C","B","B"],"2026-08-30":["C","C","B","B"],"2026-08-31":["D","D","C","C"],"2026-09-01":["D","D","C","C"],"2026-09-02":["A","A","D","D"],"2026-09-03":["A","A","D","D"],"2026-09-04":["B","B","A","A"],"2026-09-05":["B","B","A","A"],"2026-09-06":["C","C","B","B"],"2026-09-07":["C","C","B","B"],"2026-09-08":["D","D","C","C"],"2026-09-09":["D","D","C","C"],"2026-09-10":["A","A","D","D"],"2026-09-11":["A","A","D","D"],"2026-09-12":["B","B","A","A"],"2026-09-13":["B","B","A","A"],"2026-09-14":["C","C","B","B"],"2026-09-15":["C","C","B","B"],"2026-09-16":["D","D","C","C"],"2026-09-17":["D","D","C","C"],"2026-09-18":["A","A","D","D"],"2026-09-19":["A","A","D","D"],"2026-09-20":["B","B","A","A"],"2026-09-21":["B","B","A","A"],"2026-09-22":["C","C","B","B"],"2026-09-23":["C","C","B","B"],"2026-09-24":["D","D","C","C"],"2026-09-25":["D","D","C","C"],"2026-09-26":["A","A","D","D"],"2026-09-27":["A","A","D","D"],"2026-09-28":["B","B","A","A"],"2026-09-29":["B","B","A","A"],"2026-09-30":["C","C","B","B"],"2026-10-01":["C","C","B","B"],"2026-10-02":["D","D","C","C"],"2026-10-03":["D","D","C","C"],"2026-10-04":["A","A","D","D"],"2026-10-05":["A","A","D","D"],"2026-10-06":["B","B","A","A"],"2026-10-07":["B","B","A","A"],"2026-10-08":["C","C","B","B"],"2026-10-09":["C","C","B","B"],"2026-10-10":["D","D","C","C"],"2026-10-11":["D","D","C","C"],"2026-10-12":["A","A","D","D"],"2026-10-13":["A","A","D","D"],"2026-10-14":["B","B","A","A"],"2026-10-15":["B","B","A","A"],"2026-10-16":["C","C","B","B"],"2026-10-17":["C","C","B","B"],"2026-10-18":["D","D","C","C"],"2026-10-19":["D","D","C","C"],"2026-10-20":["A","A","D","D"],"2026-10-21":["A","A","D","D"],"2026-10-22":["B","B","A","A"],"2026-10-23":["B","B","A","A"],"2026-10-24":["C","C","B","B"],"2026-10-25":["C","C","B","B"],"2026-10-26":["D","D","C","C"],"2026-10-27":["D","D","C","C"],"2026-10-28":["A","A","D","D"],"2026-10-29":["A","A","D","D"],"2026-10-30":["B","B","A","A"],"2026-10-31":["B","B","A","A"],"2026-11-01":["C","C","B","B"],"2026-11-02":["C","C","B","B"],"2026-11-03":["D","D","C","C"],"2026-11-04":["D","D","C","C"],"2026-11-05":["A","A","D","D"],"2026-11-06":["A","A","D","D"],"2026-11-07":["B","B","A","A"],"2026-11-08":["B","B","A","A"],"2026-11-09":["C","C","B","B"],"2026-11-10":["C","C","B","B"],"2026-11-11":["D","D","C","C"],"2026-11-12":["D","D","C","C"],"2026-11-13":["A","A","D","D"],"2026-11-14":["A","A","D","D"],"2026-11-15":["B","B","A","A"],"2026-11-16":["B","B","A","A"],"2026-11-17":["C","C","B","B"],"2026-11-18":["C","C","B","B"],"2026-11-19":["D","D","C","C"],"2026-11-20":["D","D","C","C"],"2026-11-21":["A","A","D","D"],"2026-11-22":["A","A","D","D"],"2026-11-23":["B","B","A","A"],"2026-11-24":["B","B","A","A"],"2026-11-25":["C","C","B","B"],"2026-11-26":["C","C","B","B"],"2026-11-27":["D","D","C","C"],"2026-11-28":["D","D","C","C"],"2026-11-29":["A","A","D","D"],"2026-11-30":["A","A","D","D"],"2026-12-01":["B","B","A","A"],"2026-12-02":["B","B","A","A"],"2026-12-03":["C","C","B","B"],"2026-12-04":["C","C","B","B"],"2026-12-05":["D","D","C","C"],"2026-12-06":["D","D","C","C"],"2026-12-07":["A","A","D","D"],"2026-12-08":["A","A","D","D"],"2026-12-09":["B","B","A","A"],"2026-12-10":["B","B","A","A"],"2026-12-11":["C","C","B","B"],"2026-12-12":["C","C","B","B"],"2026-12-13":["D","D","C","C"],"2026-12-14":["D","D","C","C"],"2026-12-15":["A","A","D","D"],"2026-12-16":["A","A","D","D"],"2026-12-17":["B","B","A","A"],"2026-12-18":["B","B","A","A"],"2026-12-19":["C","C","B","B"],"2026-12-20":["C","C","B","B"],"2026-12-21":["D","D","C","C"],"2026-12-22":["D","D","C","C"],"2026-12-23":["A","A","D","D"],"2026-12-24":["A","A","D","D"],"2026-12-25":["B","B","A","A"],"2026-12-26":["B","B","A","A"],"2026-12-27":["C","C","B","B"],"2026-12-28":["C","C","B","B"],"2026-12-29":["D","D","C","C"],"2026-12-30":["D","D","C","C"],"2026-12-31":["A","A","D","D"]},"auxiliares":[{"nome":"ALEX","turno":"B","mat":451696},{"nome":"JOSÉ RIBAMAR","turno":"A","mat":455274},{"nome":"LEONARDO","turno":"A","mat":455273},{"nome":"FRANCISCO","turno":"A","mat":451692},{"nome":"ANA PAULA","turno":"B","mat":451689},{"nome":"VINICIUS","turno":"B","mat":451701},{"nome":"MATHEUS","turno":"B","mat":458275},{"nome":"KAUE","turno":"A","mat":455272},{"nome":"EDMILSON","turno":"C","mat":451694},{"nome":"JORGE KLYCHER","turno":"C","mat":451682},{"nome":"NATÃ","turno":"C","mat":451700},{"nome":"RONAN","turno":"C","mat":455269},{"nome":"ALEXANDRE","turno":"C","mat":455267},{"nome":"LUCAS","turno":"D","mat":451693},{"nome":"CRISTIANO","turno":"D","mat":451695},{"nome":"ANDERSON","turno":"D","mat":455270},{"nome":"BRUNO","turno":"D","mat":455271},{"nome":"MÁRCIO","turno":"D","mat":455513}],"operadores":[{"nome":"ALCIDES","turno":"A","tipo":"portico"},{"nome":"FRANCISCO","turno":"A","tipo":"portico"},{"nome":"DONIZETE","turno":"A","tipo":"portico"},{"nome":"FELIPE","turno":"A","tipo":"empilhadeira"},{"nome":"LUIZ CARLOS","turno":"A","tipo":"empilhadeira"},{"nome":"ANDRÉ LUIZ","turno":"B","tipo":"portico"},{"nome":"FARIAS","turno":"B","tipo":"portico"},{"nome":"JONATHAN","turno":"B","tipo":"empilhadeira"},{"nome":"ARMANDO","turno":"B","tipo":"empilhadeira"},{"nome":"EDIMILSON","turno":"C","tipo":"empilhadeira"},{"nome":"NOBERTO","turno":"C","tipo":"empilhadeira"},{"nome":"ALEXANDER","turno":"C","tipo":"portico"},{"nome":"JOÃO DOMINGUES","turno":"C","tipo":"portico"},{"nome":"RANGEL","turno":"D","tipo":"portico"},{"nome":"JAQUES","turno":"D","tipo":"portico"},{"nome":"ADILSON","turno":"D","tipo":"empilhadeira"}]};
+const FB={apiKey:"AIzaSyAOn25k4FcTnc2SuCZz5OCFMJUaGaVMss0",authDomain:"pcel-t32app.firebaseapp.com",
+  databaseURL:"https://pcel-t32app-default-rtdb.firebaseio.com",projectId:"pcel-t32app",
+  storageBucket:"pcel-t32app.firebasestorage.app",messagingSenderId:"466456779569",
+  appId:"1:466456779569:web:5ba5929b959f2137bbae10"};
+
+const PER=['07\u00d713','13\u00d719','19\u00d701','01\u00d707'];
+const TON_ATADO=2, TON_VAGAO=96;
+const fmt=n=>(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+const hoje=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+function curPer(){const h=new Date().getHours();return h>=7&&h<13?0:h>=13&&h<19?1:h>=19?2:3;}
+function turnoAgora(){const e=DADOS.escala[hoje()];return e?e[curPer()]:'—';}
+
+let db=null, dados={regs:[],navio:null,horas:[],progs:[],estoque:[],contagem:null};
+let ultOk=null;
+
+// relógio e cabeçalho
+setInterval(()=>{
+  const d=new Date(), p2=n=>String(n).padStart(2,'0');
+  document.getElementById('relogio').textContent=`${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
+  document.getElementById('turno').textContent=`${turnoAgora()} · ${PER[curPer()]}`;
+  if(ultOk){
+    const s=Math.round((Date.now()-ultOk)/1000);
+    const off=s>180;
+    const c=document.getElementById('conx');
+    c.className='conx'+(off?' off':'');
+    c.innerHTML=`<b>●</b> ${off?'sem atualizar':'conectado'}<br><span>há ${s<60?s+'s':Math.round(s/60)+'min'}</span>`;
+  }
+},1000);
+
+// mantém a tela acesa na TV
+(async()=>{try{if('wakeLock' in navigator)await navigator.wakeLock.request('screen');}catch(e){}})();
+
+// ── conexão ──
+(async function(){
+  try{
+    firebase.initializeApp(FB);
+    db=firebase.firestore();
+    await firebase.auth().signInAnonymously();
+    escutar();
+  }catch(e){
+    document.querySelectorAll('.corpo').forEach(c=>c.innerHTML=
+      `<div class="vazio">Sem conexão com o servidor.<br>${e.message}</div>`);
+  }
+})();
+
+function escutar(){
+  const d=hoje();
+  db.collection('registros').where('data','==',d)
+    .onSnapshot(s=>{dados.regs=s.docs.map(x=>({id:x.id,...x.data()}));ok();},err);
+  db.collection('navios').where('ativo','==',true).limit(1)
+    .onSnapshot(s=>{dados.navio=s.empty?null:{id:s.docs[0].id,...s.docs[0].data()};
+      if(dados.navio)db.collection('embarque_horas').where('navioId','==',dados.navio.id)
+        .onSnapshot(h=>{dados.horas=h.docs.map(x=>x.data());ok();},err);
+      ok();},err);
+  db.collection('programacoes').where('aberta','==',true)
+    .onSnapshot(s=>{dados.progs=s.docs.map(x=>x.data());ok();},err);
+  db.collection('estoque_horas').where('data','==',d)
+    .onSnapshot(s=>{dados.estoque=s.docs.map(x=>x.data()).sort((a,b)=>a.hora.localeCompare(b.hora));ok();},err);
+  db.collection('contagens_armazem').orderBy('data','desc').limit(1)
+    .onSnapshot(s=>{dados.contagem=s.empty?null:s.docs[0].data();ok();},err);
+}
+function err(e){console.error(e);}
+function ok(){ultOk=Date.now();pintar();}
+
+function pintar(){descarga();embarque();operacao();estoque();}
+
+
+// ══ QUADRANTE 1 — DESCARGA ══
+function descarga(){
+  const box=document.getElementById('q-descarga');
+  const regs=dados.regs;
+  const ferro=regs.filter(r=>r.atividade==='recebimento'&&r.producao?.tipo==='Ferro');
+  const rodo =regs.filter(r=>r.atividade==='recebimento'&&r.producao?.tipo==='Rodo');
+  const vg=ferro.reduce((s,r)=>s+(r.producao.qtd||0),0);
+  const at=rodo.reduce((s,r)=>s+(r.producao.qtd||0),0);
+  const car=rodo.reduce((s,r)=>s+(r.producao.carretas||0),0);
+
+  let h=`<div class="nums">
+    <div class="nn"><div class="v">${vg}</div><div class="l">Vagões</div></div>
+    <div class="nn t"><div class="v">${fmt(vg*TON_VAGAO)}</div><div class="l">t ferroviário</div></div>
+    <div class="nn o"><div class="v">${car}</div><div class="l">Carretas</div></div>
+    <div class="nn g"><div class="v">${fmt(at*TON_ATADO)}</div><div class="l">t rodoviário</div></div>
+  </div>`;
+
+  const pf=dados.progs.filter(p=>p.tipo==='ferro'), pr=dados.progs.filter(p=>p.tipo==='rodo');
+  pf.forEach(p=>{
+    const pc=p.vagoesProg?Math.min(100,vg/p.vagoesProg*100):0;
+    h+=`<div class="prog"><div class="tp"><b>Ferro · ${p.prefixo||''}</b>
+      <span>${vg} de ${p.vagoesProg} vagões · ${pc.toFixed(0)}%</span></div>
+      <div class="barra"><i class="${pc>=100?'ok':''}" style="width:${pc}%"></i></div></div>`;
+    const cheios=Math.min(40,vg);
+    h+=`<div class="vias">${['L4','L3','L2','L1'].map((l,li)=>{
+      const base=(3-li)*10;
+      return `<div class="via"><span class="vn">${l}</span>${[...Array(10)].map((_,j)=>
+        `<div class="vg ${base+j<cheios?'ok':''}"></div>`).join('')}</div>`;
+    }).join('')}</div>`;
+  });
+  pr.forEach(p=>{
+    const pc=p.carretasProg?Math.min(100,car/p.carretasProg*100):0;
+    h+=`<div class="prog"><div class="tp"><b>Rodo · ${p.sku||''}</b>
+      <span>${car} de ${p.carretasProg} carretas · ${pc.toFixed(0)}%</span></div>
+      <div class="barra"><i class="${pc>=100?'ok':''}" style="width:${pc}%"></i></div></div>`;
+  });
+  if(!pf.length&&!pr.length&&!vg&&!at)h+='<div class="vazio">Sem descarga programada ou lançada hoje.</div>';
+  box.innerHTML=h;
+}
+
+// ══ QUADRANTE 2 — EMBARQUE ══
+function embarque(){
+  const box=document.getElementById('q-embarque');
+  const n=dados.navio;
+  if(!n){box.innerHTML='<div class="vazio">Nenhum navio em operação.</div>';return;}
+  const hs=dados.horas;
+  const carregado=hs.reduce((s,x)=>s+(x.somaTon||0),0);
+  const saldo=Math.max(0,(n.total||0)-carregado);
+  const pc=n.total?carregado/n.total*100:0;
+  const doDia=hs.filter(x=>x.data===hoje()).sort((a,b)=>a.hora.localeCompare(b.hora));
+  const ultima=doDia[doDia.length-1];
+
+  const porPorao={};
+  hs.forEach(x=>(x.ternos||[]).forEach(t=>{if(t.porao)porPorao[t.porao]=(porPorao[t.porao]||0)+(t.ton||0);}));
+  const maxCap=Math.max(...Object.values(n.poroes||{1:1}));
+
+  box.innerHTML=`
+    <div style="font-size:14px;font-weight:800;margin-bottom:2px;">${n.nome}${n.viagem?' · '+n.viagem:''}</div>
+    <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:10px;">
+      ${[n.produto,n.destino,'Berço 32'].filter(Boolean).join(' · ')}</div>
+    <div class="nums">
+      <div class="nn t"><div class="v">${fmt(carregado)}</div><div class="l">t embarcadas</div></div>
+      <div class="nn o"><div class="v">${fmt(saldo)}</div><div class="l">t de saldo</div></div>
+      <div class="nn g"><div class="v">${pc.toFixed(1)}%</div><div class="l">Concluído</div></div>
+      <div class="nn"><div class="v">${ultima?fmt(ultima.somaTon):'—'}</div><div class="l">t/h · ${ultima?ultima.hora:'—'}</div></div>
+    </div>
+    <div class="poroes">${Object.entries(n.poroes||{}).map(([p,prev])=>{
+      const feito=porPorao[p]||0, pcp=prev?Math.min(100,feito/prev*100):0, alt=(prev/maxCap*100);
+      return `<div class="po"><div class="pc" style="color:${pcp>=99?'var(--verde)':'var(--txt)'}">${pcp.toFixed(0)}%</div>
+        <div class="cx" style="height:${Math.max(8,alt)}%"><i class="${pcp>=99?'ok':''}" style="height:${pcp}%"></i></div>
+        <div class="nm">P${p}</div></div>`;
+    }).join('')}</div>`;
+}
+
+// ══ QUADRANTE 3 — OPERAÇÃO T32 (frentes de trabalho) ══
+const ATV={embarque:'⚓ Embarque',recebimento:'🚛 Recebimento',armazenagem:'🏗️ Armazenagem',
+           limpeza:'🧹 Limpeza',abastecimento:'⛽ Abastecimento',avarias:'⚠️ Avarias',outros:'📌 Outros'};
+
+function operacao(){
+  const box=document.getElementById('q-operacao');
+  const pi=curPer();
+  const doPeriodo=dados.regs.filter(r=>r.periodoIdx===pi);
+  const ativas=doPeriodo.filter(r=>r.frente?.ativa);
+  const lista=ativas.length?ativas:doPeriodo;
+
+  const casa=lista.reduce((s,r)=>s+(r.efetivo?.auxCasa||0)+(r.efetivo?.opCasa||0),0);
+  const ogmo=lista.reduce((s,r)=>s+(r.efetivo?.ogmo||0),0);
+  const maq=new Set();
+  lista.forEach(r=>{
+    (r.recursos?.empilhadeiras||[]).forEach(m=>m.maq&&maq.add(m.maq));
+    (r.recursos?.porticos||[]).forEach(m=>m.maq&&maq.add(m.maq));
+  });
+  const defs=dados.regs.filter(r=>r.recursos?.defeitos?.ativo).length;
+  const tpas=dados.regs.filter(r=>r.recursos?.tpa?.ativo).length;
+
+  let h=`<div class="nums">
+    <div class="nn"><div class="v">${casa+ogmo}</div><div class="l">Efetivo</div></div>
+    <div class="nn t"><div class="v">${lista.length}</div><div class="l">Frentes</div></div>
+    <div class="nn g"><div class="v">${maq.size}</div><div class="l">Máquinas</div></div>
+    <div class="nn r"><div class="v">${defs+tpas}</div><div class="l">Ocorrências</div></div>
+  </div>`;
+
+  if(!lista.length){box.innerHTML=h+'<div class="vazio">Nenhum lançamento neste período.</div>';return;}
+
+  h+=lista.sort((a,b)=>(a.frente?.inicio||'').localeCompare(b.frente?.inicio||'')).map(r=>{
+    const e=r.efetivo||{};
+    const pessoas=[r.colaborador,...(e.colegas||[]).map(c=>c.nome+(c.fte?' (FTE)':''))].filter(Boolean);
+    const ms=[...(r.recursos?.empilhadeiras||[]),...(r.recursos?.porticos||[])]
+             .map(m=>m.maq+(m.op?' · '+m.op:'')).filter(Boolean);
+    let prod='';
+    const p=r.producao;
+    if(p){
+      if(p.unidade==='ton'&&p.valor)prod=`<span class="pill">${fmt(p.valor)} t</span>`;
+      else if(p.unidade==='vaos')prod=`<span class="pill">${p.valor} vãos</span>`;
+      else if(p.unidade==='maquinas')prod=`<span class="pill">${p.valor} máq.</span>`;
+    }
+    return `<div class="frente" style="border-left-color:${r.frente?.ativa?'var(--verde)':'var(--teal)'}">
+      <div class="t"><span>${ATV[r.atividade]||r.atividade}</span>
+        ${r.frente?.ativa?'<em>● em andamento</em>':`<span style="font-size:10px;color:var(--muted);font-weight:600;">${r.frente?.inicio||''}–${r.frente?.fim||''}</span>`}</div>
+      <div class="d">${prod}
+        ${e.ogmo?`<span class="pill o">${e.ogmo} OGMO</span>`:''}
+        ${r.detalhe?r.detalhe+'<br>':''}
+        <b style="color:var(--txt);">${pessoas.join(', ')}</b>
+        ${ms.length?'<br>'+ms.join(' · '):''}</div>
+    </div>`;
+  }).join('');
+  box.innerHTML=h;
+}
+
+// ══ QUADRANTE 4 — ESTOQUE ══
+const VAOS_ORDEM=['V08','V21','V20','V19','V18','V17','V16','V15','V14','V13','V12','V11','V10','V09',
+                  'V07','V06','V05','V04','V03','V02','V01'];
+const CAP_V={V01:1618,V02:1334,V03:638,V04:578,V05:878,V06:522,V07:522,V08:462,
+  V09:792,V10:1596,V11:798,V12:1596,V13:1664,V14:1596,V15:798,V16:1596,
+  V17:1664,V18:798,V19:1664,V20:1596,V21:710};
+
+function estoque(){
+  const box=document.getElementById('q-estoque');
+  const e=dados.estoque, ult=e[e.length-1];
+  const c=dados.contagem;
+
+  if(!ult&&!c){box.innerHTML='<div class="vazio">Nenhum estoque lançado hoje.</div>';return;}
+
+  const geral=ult?ult.atadosGeral:0, avaria=ult?ult.atadosAvaria:0;
+  let h=`<div class="nums">
+    <div class="nn"><div class="v">${fmt(geral)}</div><div class="l">Atados geral</div></div>
+    <div class="nn t"><div class="v">${fmt(geral*TON_ATADO)}</div><div class="l">Toneladas</div></div>
+    <div class="nn r"><div class="v">${fmt(avaria)}</div><div class="l">Atados avaria</div></div>
+    <div class="nn g"><div class="v">${ult?ult.hora:'—'}</div><div class="l">Último lançamento</div></div>
+  </div>`;
+
+  if(e.length>1){
+    const max=Math.max(...e.map(x=>x.total));
+    h+=`<div style="display:flex;align-items:flex-end;gap:4px;height:56px;margin-bottom:10px;">
+      ${e.map(x=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"
+        title="${x.hora}: ${fmt(x.total)}">
+        <div style="width:100%;max-width:26px;height:${(x.total/max*100)||3}%;background:var(--teal);border-radius:3px 3px 0 0;min-height:3px;"></div>
+        <div style="font-size:7px;color:var(--muted);font-weight:700;margin-top:2px;">${x.hora.slice(0,2)}</div>
+      </div>`).join('')}</div>`;
+  }
+
+  if(c){
+    const porPonto={};
+    (c.pontos||[]).forEach(p=>{porPonto[p.ponto]=(porPonto[p.ponto]||0)+p.qtd;});
+    h+=`<div style="font-size:9.5px;color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px;">
+      Ocupação por vão · contagem de ${c.data.slice(8,10)}/${c.data.slice(5,7)}</div>
+      <div class="vaos">${VAOS_ORDEM.map(v=>{
+        const q=porPonto[v]||0, cap=CAP_V[v]||1, pc=Math.min(100,q/cap*100);
+        return `<div class="vv" title="${v}: ${fmt(q)} de ${fmt(cap)}"><i class="${pc>=85?'cheio':''}" style="height:${pc}%"></i></div>`;
+      }).join('')}</div>
+      <div class="vzr">${VAOS_ORDEM.map(v=>`<span>${v.slice(1)}</span>`).join('')}</div>`;
+    if(c.divergencia!=null&&Math.abs(c.divergencia)>0){
+      h+=`<div style="font-size:10.5px;font-weight:700;margin-top:8px;color:${Math.abs(c.divergencia)>200?'var(--danger)':'var(--muted)'};">
+        Divergência da última contagem: ${fmt(Math.abs(c.divergencia))} atados</div>`;
+    }
+  }
+  box.innerHTML=h;
+}
+
+</script>
+</body>
+</html>
