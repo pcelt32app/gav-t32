@@ -405,7 +405,7 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
 
     <div class="card">
       <h3><div class="icon ib">🏭</div>Trabalho em Execução</h3>
-      <div style="background:rgba(232,132,26,.10);border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:10px 13px;margin-bottom:14px;font-size:12px;line-height:1.5;"><b>Lance a cada hora</b>, ou sempre que mudar de atividade. Cada lançamento registra só o que foi feito desde o anterior — o app soma o período sozinho.</div>
+      <div style="background:rgba(232,132,26,.10);border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:10px 13px;margin-bottom:14px;font-size:12px;line-height:1.5;"><b>Abra a frente uma vez</b> e lance a produção a cada hora fechada. Depois de salvar, o bloco <b>Sua frente em andamento</b> aparece no resumo — é ali que você lança as horas.</div>
       <div class="atv-sec" id="as-embarque"><div class="atv-hdr" onclick="selAtv('embarque')"><input type="radio" name="atv" value="embarque" id="r-embarque"><span>⚓ Embarque</span></div>
         <div class="atv-body"><div class="fg" style="margin-top:6px;">
           <div class="fgrp"><label>Terno *</label><select id="emb-terno"><option value="">Selecione</option><option>Terno 1</option><option>Terno 2</option></select></div>
@@ -422,12 +422,12 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
           </div>
 
           <div id="receb-ferro-box" style="display:none;margin-top:11px;">
-            <p class="hh-tit">Vagões descarregados por hora</p>
+            <p class="hh-tit">Primeira hora <span style="text-transform:none;font-weight:600;">(opcional — as demais você lança no resumo)</span></p>
             <div id="hh-ferro"></div>
           </div>
 
           <div id="receb-rodo-box" style="display:none;margin-top:11px;">
-            <p class="hh-tit">Recebimento rodoviário por hora</p>
+            <p class="hh-tit">Recebimento rodoviário <span style="text-transform:none;font-weight:600;">(SKU obrigatório · horas você lança no resumo)</span></p>
             <div class="fgrp" style="max-width:200px;"><label>SKU *</label><input type="text" id="receb-sku" placeholder="Ex: RSP-EP"></div>
             <div id="hh-rodo"></div>
           </div>
@@ -453,7 +453,7 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
       <div class="atv-sec" id="as-avarias"><div class="atv-hdr" onclick="selAtv('avarias')"><input type="radio" name="atv" value="avarias" id="r-avarias"><span>⚠️ Avarias</span></div>
         <div class="atv-body">
           <div class="fgrp" style="margin-top:6px;"><label>Placas de Carretas *</label><input type="text" id="avar-placas" placeholder="Ex: ABC1234, DEF5678"></div>
-          <p class="hh-tit">Carregamento de avarias por hora</p>
+          <p class="hh-tit">Primeira hora <span style="text-transform:none;font-weight:600;">(opcional — as demais você lança no resumo)</span></p>
           <div id="hh-avaria"></div>
           <div id="avar-calc" class="hh-tot"></div>
         </div>
@@ -576,6 +576,18 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
   <div class="suc-header"><div class="chk">✅</div><h2>Registro salvo!</h2><div id="suc-info" style="font-size:13px;opacity:.85;"></div></div>
   <p style="font-size:12px;font-weight:600;color:#7a8fa6;margin-bottom:11px;text-transform:uppercase;letter-spacing:.4px;">Resumo — <span id="suc-per"></span></p>
   <div class="mini-dash" id="suc-stats"></div>
+
+  <div class="card" id="frente-aberta" style="display:none;border-left:4px solid var(--orange);">
+    <h3><div class="icon io">⏱️</div>Sua frente em andamento</h3>
+    <div id="fa-info" style="font-size:12px;color:#7a8fa6;font-weight:600;margin-bottom:12px;"></div>
+    <div id="fa-grade"></div>
+    <div id="fa-tot" class="hh-tot"></div>
+    <div class="flex-end" style="margin-top:12px;gap:8px;">
+      <button class="btn btn-sec btn-sm" onclick="encerrarFrente()">✓ Encerrar frente</button>
+      <button class="btn btn-primary btn-sm" onclick="lancarHoraFrente()">💾 Lançar hora</button>
+    </div>
+  </div>
+
   <div class="card"><h3><div class="icon ib">📋</div>Registros do Período</h3>
     <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Hora</th><th>Atividade</th><th>Detalhe</th></tr></thead><tbody id="suc-tbody"></tbody></table></div>
   </div>
@@ -731,7 +743,7 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
       <h3><div class="icon it">⏱️</div>Lançar Hora</h3>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
         <div class="fgrp"><label>Data *</label><input type="date" id="eh-data"></div>
-        <div class="fgrp"><label>Período *</label><select id="eh-periodo"><option>07x13</option><option>13x19</option><option>19x01</option><option>01x07</option></select></div>
+        <div class="fgrp"><label>Período *</label><select id="eh-periodo"><option>07×13</option><option>13×19</option><option>19×01</option><option>01×07</option></select></div>
         <div class="fgrp"><label>Hora *</label><select id="eh-hora"></select></div>
         <div class="fgrp"><label>Produto</label><input type="text" id="eh-produto" placeholder="Atados de Celulose"></div>
       </div>
@@ -1138,12 +1150,7 @@ function validateAtv(){
     if(!tipo){document.getElementById('receb-chips').classList.add('inv');ok=false;}
     else{
       document.getElementById('receb-chips').classList.remove('inv');
-      if(tipo==='Ferro'){
-        if(!lerHH('ferro',[{k:'vg'}]).length){toast('Lance ao menos uma hora com vagões.','danger');return false;}
-      }else{
-        req('receb-sku');
-        if(!lerHH('rodo',[{k:'car'},{k:'at'}]).length){toast('Lance ao menos uma hora com carretas e atados.','danger');return false;}
-      }
+      if(tipo==='Rodo')req('receb-sku');   // as horas são lançadas depois, na frente aberta
     }
   }else if(atv==='armazenagem'){
     req('arm-vaos');reqNum('arm-ton');
@@ -1154,7 +1161,7 @@ function validateAtv(){
     reqNum('abast-ps1');reqNum('abast-ps2');
   }else if(atv==='avarias'){
     req('avar-placas');
-    if(!lerHH('avaria',[{k:'at'}]).length){toast('Lance ao menos uma hora com atados de avaria.','danger');return false;}
+
   }else if(atv==='outros'){
     req('outros-desc');
   }
@@ -1607,6 +1614,7 @@ function resetForm(){
 let sucUnsub=null;
 
 function pintaSucesso(docs){
+  pintaFrenteAberta(docs);
   const colT=docs.reduce((s,d)=>s+(d.recursos?.coletores?.qtd||0),0);
   const radT=docs.reduce((s,d)=>s+(d.recursos?.radios?.usados?.length||0),0);
   const tonT=docs.reduce((s,d)=>s+(d.producao?.unidade==='ton'?(d.producao.valor||0):0),0);
@@ -2889,6 +2897,120 @@ function verMapa(){
     <div class="mp-fila">${MAR_SEQ.map(cel).join('')}</div>
     <div class="mp-leg">${skus.map(k=>`<span><i style="background:${corSku(k)}"></i>${k}</span>`).join('')}</div>`;
   document.getElementById('mapa-modal').style.display='flex';
+}
+
+// ══════════════════════════════════════════════════════════
+//  FRENTE EM ANDAMENTO — o auxiliar lança hora a hora
+// ══════════════════════════════════════════════════════════
+let frenteAberta=null;
+
+const CFG_HH={
+  ferro:  {campos:[{k:'vagoes',rot:'Vagões'}], fator:96, un:'vagões'},
+  rodo:   {campos:[{k:'carretas',rot:'Carretas'},{k:'atados',rot:'Atados'}], fator:2, un:'atados'},
+  avaria: {campos:[{k:'sku',rot:'Sigla',txt:true},{k:'atados',rot:'Atados'}], fator:2, un:'atados'}
+};
+
+function tipoFrente(d){
+  if(d.atividade==='avarias')return 'avaria';
+  if(d.atividade==='recebimento')return d.producao?.tipo==='Ferro'?'ferro':'rodo';
+  return null;
+}
+
+// Procura, entre os registros do período, uma frente do próprio auxiliar ainda aberta
+function achaFrenteAberta(docs){
+  if(!currentUser)return null;
+  return docs.find(d=>d.matricula===currentUser.mat && d.frente?.ativa && tipoFrente(d)) || null;
+}
+
+function pintaFrenteAberta(docs){
+  const card=document.getElementById('frente-aberta');
+  if(!card)return;
+  frenteAberta=achaFrenteAberta(docs);
+  if(!frenteAberta){card.style.display='none';return;}
+  card.style.display='block';
+
+  const tp=tipoFrente(frenteAberta), cfg=CFG_HH[tp];
+  const lancadas={}; (frenteAberta.producao?.horas||[]).forEach(h=>{lancadas[h.hora]=h;});
+  const rotulo={ferro:'Recebimento Ferro',rodo:'Recebimento Rodo',avaria:'Avarias'}[tp];
+
+  document.getElementById('fa-info').innerHTML=
+    `<b style="color:var(--dark);">${rotulo}</b> · início ${frenteAberta.frente.inicio}`+
+    (frenteAberta.producao?.sku?' · '+frenteAberta.producao.sku:'')+
+    ` · ${Object.keys(lancadas).length} hora(s) lançada(s)`;
+
+  const cols=`grid-template-columns:56px ${cfg.campos.map(()=>'1fr').join(' ')} 30px;`;
+  let h=`<div class="hh-cab" style="${cols}"><span>Hora</span>${cfg.campos.map(c=>`<span>${c.rot}</span>`).join('')}<span></span></div>`;
+  h+=horasDoPeriodo().map(hr=>{
+    const id=hr.replace('\u00d7','');
+    const j=lancadas[hr];
+    return `<div class="hh-lin ${j?'tem':''}" style="${cols}">
+      <div class="hh-h">${hr}</div>
+      ${cfg.campos.map(c=>`<input type="text" ${c.txt?'':'inputmode="numeric"'} id="fa-${c.k}-${id}"
+          value="${j?(j[c.k]??''):''}" ${j?'disabled style="background:var(--bg);color:#7a8fa6;"':''}
+          placeholder="—" ${c.txt?'style="text-transform:uppercase;"':''}>`).join('')}
+      <div style="text-align:center;font-size:13px;color:${j?'var(--green)':'#dfe4ea'};">${j?'✓':'·'}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('fa-grade').innerHTML=h;
+  totFrente();
+}
+
+function totFrente(){
+  if(!frenteAberta)return;
+  const tp=tipoFrente(frenteAberta), cfg=CFG_HH[tp];
+  const hs=frenteAberta.producao?.horas||[];
+  const chave=tp==='ferro'?'vagoes':'atados';
+  const q=hs.reduce((s,x)=>s+(x[chave]||0),0);
+  const car=tp==='rodo'?hs.reduce((s,x)=>s+(x.carretas||0),0):0;
+  document.getElementById('fa-tot').textContent=
+    q?`${q} ${cfg.un}${car?` · ${car} carretas`:''} × ${cfg.fator} t = ${fmtT(q*cfg.fator)} toneladas`
+     :'Nenhuma hora lançada ainda.';
+}
+
+async function lancarHoraFrente(){
+  if(!frenteAberta||!db)return;
+  const tp=tipoFrente(frenteAberta), cfg=CFG_HH[tp];
+  const lancadas=(frenteAberta.producao?.horas||[]).map(h=>h.hora);
+  const novas=[];
+  horasDoPeriodo().forEach(hr=>{
+    if(lancadas.includes(hr))return;
+    const id=hr.replace('\u00d7','');
+    const o={hora:hr}; let tem=false;
+    cfg.campos.forEach(c=>{
+      const el=document.getElementById(`fa-${c.k}-${id}`);
+      if(!el)return;
+      if(c.txt){o[c.k]=el.value.trim().toUpperCase(); if(o[c.k])tem=true;}
+      else{const v=nDec(`fa-${c.k}-${id}`); o[c.k]=v; if(v>0)tem=true;}
+    });
+    if(tem){o.lancadoEm=new Date().toISOString(); o.lancadoPor=currentUser?.mat||null; novas.push(o);}
+  });
+  if(!novas.length){toast('Preencha ao menos uma hora nova.','danger');return;}
+
+  const horas=[...(frenteAberta.producao?.horas||[]),...novas]
+    .sort((a,b)=>a.hora.localeCompare(b.hora));
+  const chave=tp==='ferro'?'vagoes':'atados';
+  const q=horas.reduce((s,x)=>s+(x[chave]||0),0);
+  const prod={...frenteAberta.producao, horas, qtd:q, valor:+(q*cfg.fator).toFixed(2)};
+  if(tp==='rodo')prod.carretas=horas.reduce((s,x)=>s+(x.carretas||0),0);
+  if(tp==='avaria')prod.produtos=[...new Set(horas.map(h=>h.sku).filter(Boolean))];
+
+  try{
+    await db.collection('registros').doc(frenteAberta.id).update({producao:prod});
+    toast(`${novas.length} hora(s) lançada(s).`,'success');
+  }catch(e){toast('Erro ao lançar: '+e.message,'danger');}
+}
+
+async function encerrarFrente(){
+  if(!frenteAberta||!db)return;
+  const fim=prompt('Hora de encerramento da frente (hh:mm):',
+                   String(new Date().getHours()).padStart(2,'0')+':00');
+  if(fim===null)return;
+  if(!/^\d{1,2}:\d{2}$/.test(fim.trim())){toast('Formato inválido. Use hh:mm.','danger');return;}
+  try{
+    await db.collection('registros').doc(frenteAberta.id)
+      .update({'frente.fim':fim.trim(),'frente.ativa':false});
+    toast('Frente encerrada.','success');
+  }catch(e){toast('Erro: '+e.message,'danger');}
 }
 
 // ══ CONTROLE DE ACESSO POR FUNÇÃO ══
