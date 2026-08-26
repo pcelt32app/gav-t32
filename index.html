@@ -227,6 +227,14 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
 .mp-leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:10px;color:#7a8fa6;font-weight:600;}
 .mp-leg span{display:flex;align-items:center;gap:5px;}
 .mp-leg i{width:12px;height:12px;border-radius:3px;display:inline-block;}
+
+.mp-ramal{background:#2c3742;border-radius:8px;padding:10px 12px;margin-bottom:4px;}
+.mp-rl{font-size:9px;font-weight:800;color:rgba(255,255,255,.75);letter-spacing:.08em;margin-bottom:7px;}
+.mp-via{display:flex;align-items:center;gap:5px;margin-bottom:4px;}
+.mp-via:last-child{margin-bottom:0;}
+.mp-vn{font-size:8px;font-weight:800;color:rgba(255,255,255,.5);width:26px;flex:none;}
+.mp-vg{flex:1;height:12px;border-radius:2px;background:rgba(255,255,255,.13);}
+.mp-vg.ok{background:#2f6fd0;box-shadow:inset 0 1px 0 rgba(255,255,255,.35);}
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:10000;}
 .modal-box{background:#fff;border-radius:16px;padding:28px;max-width:440px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);}
@@ -1537,7 +1545,7 @@ async function salvarRegistro(){
     case'avarias':{
       const l=lerHH('avaria',[{k:'at'}]);
       const at=l.reduce((s,x)=>s+(x.at||0),0);
-      const hs=l.map(x=>({hora:x.hora,atados:x.at,sku:(document.getElementById('avaria-sku-'+x.hora.replace('x',''))?.value||'').trim().toUpperCase()}));
+      const hs=l.map(x=>({hora:x.hora,atados:x.at,sku:(document.getElementById('avaria-sku-'+x.hora.replace('\u00d7',''))?.value||'').trim().toUpperCase()}));
       producao={unidade:'ton',valor:+(at*TON_ATADO).toFixed(2),qtd:at,unidadeQtd:'atados',fator:TON_ATADO,horas:hs,
                 produtos:[...new Set(hs.map(h=>h.sku).filter(Boolean))]};
       break;}
@@ -1661,11 +1669,23 @@ const PARALISACOES={
   OT:'Outros', AP:'Preparação do navio'
 };
 const HORAS_PERIODO={
-  '07x13':['07x08','08x09','09x10','10x11','11x12','12x13'],
-  '13x19':['13x14','14x15','15x16','16x17','17x18','18x19'],
-  '19x01':['19x20','20x21','21x22','22x23','23x00','00x01'],
-  '01x07':['01x02','02x03','03x04','04x05','05x06','06x07']
+  '07\u00d713':['07\u00d708','08\u00d709','09\u00d710','10\u00d711','11\u00d712','12\u00d713'],
+  '13\u00d719':['13\u00d714','14\u00d715','15\u00d716','16\u00d717','17\u00d718','18\u00d719'],
+  '19\u00d701':['19\u00d720','20\u00d721','21\u00d722','22\u00d723','23\u00d700','00\u00d701'],
+  '01\u00d707':['01\u00d702','02\u00d703','03\u00d704','04\u00d705','05\u00d706','06\u00d707']
 };
+
+// qual hora fechada sugerir: a última que já terminou dentro do período
+function horaSugerida(){
+  const pi=curPeriodo();
+  const hs=HORAS_PERIODO[PER_LABELS[pi]]||[];
+  if(!hs.length)return '';
+  const ini=[7,13,19,1][pi];              // hora em que o período começa
+  let h=new Date().getHours();
+  let dec=h-ini; if(dec<0)dec+=24;        // horas decorridas desde o início
+  const idx=Math.max(0,Math.min(hs.length-1,dec-1));
+  return hs[idx];
+}
 const POROES=[1,2,3,4,5,6,7,8,9,10];
 
 let navioAtual=null;
@@ -1785,7 +1805,10 @@ async function loadEmbh(){
 function montaHoras(){
   const per=document.getElementById('eh-periodo').value;
   const sel=document.getElementById('eh-hora');
-  sel.innerHTML=(HORAS_PERIODO[per]||[]).map(h=>`<option>${h}</option>`).join('');
+  const hs=HORAS_PERIODO[per]||[];
+  sel.innerHTML=hs.map(h=>`<option>${h}</option>`).join('');
+  if(per===PER_LABELS[curPeriodo()]&&document.getElementById('eh-data').value===today())
+    sel.value=horaSugerida();
   escutaHoras();
 }
 
@@ -2112,7 +2135,7 @@ async function salvarInv(){
   }catch(e){toast('Erro ao salvar: '+e.message,'danger');}
 }
 
-const SOF_GV=[["2026-08-18","07x13",3,7,[["07x08",[120,240,9],[90,180,6],3,7],["08x09",[229,458,13],[126,252,7],3,7],["09x10",[254,508,14],[153,306,10],3,7],["10x11",[227,454,15],[234,468,13],3,7],["11x12",[316,632,19],[215,430,14],3,7],["12x13",[218,436,12],[154,308,9],3,7]],[["SM",1],["EF",1],["SM",2],["RE",2],["AC",2],["AC",2],["AC",2],["EF",2],["EF",2],["AC",2],["AC",2]]],["2026-08-18","13x19",3,7,[["13x14",[69,138,6],[74,148,5],3,7],["14x15",[142,284,8],[120,240,6],3,7],["15x16",[174,348,10],[164,328,10],3,7],["16x17",[104,208,6],[91,182,6],3,7],["17x18",[100,200,6],[74,148,5],3,7],["18x19",[71,142,5],[100,200,5],3,7]],[["SM",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["OT",1],["AC",1],["SM",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["RE",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2]]],["2026-08-18","19x01",3,7,[["19x20",[94,188,6],[138,276,8],3,7],["20x21",[174,348,10],[190,380,12],3,7],["21x22",[202,404,12],[165,330,11],3,7],["22x23",[157,314,10],[194,388,11],3,7],["23x00",[194,388,11],[209,418,11],3,7],["00x01",[198,396,11],[180,360,10],3,7]],[["SM",1],["VC",1],["RE",1],["RE",1],["AT",1],["SM",2]]],["2026-08-19","01x07",3,7,[["01x02",[156,312,9],[130,260,7],3,7],["02x03",[185,370,12],[114,228,7],3,7],["03x04",[154,308,9],[100,200,5],3,7],["04x05",[80,160,4],[154,308,9],3,6],["05x06",[164,328,10],[105,210,7],2,6],["06x07",[105,210,8],[109,218,10],2,6]],[["SM",1],["AC",1],["AC",1],["AC",1],["AC",1],["SH",1],["AC",1],["AC",1],["SM",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["SH",2],["AD",2]]],["2026-08-19","07x13",2,5,[["07x08",[152,304,8],[102,204,6],2,5],["08x09",[266,532,15],[149,298,3],2,5],["09x10",[185,370,13],[166,332,11],2,5],["10x11",[234,468,13],[164,328,12],2,5],["11x12",[184,368,10],[83,166,6],2,5],["12x13",[185,370,13],[162,324,9],2,5]],[["SM",1],["EF",1],["SM",2],["AC",2],["AC",2],["OT",2]]],["2026-08-19","13x19",2,6,[["13x14",[174,348,10],[154,308,9],2,6],["14x15",[174,348,9],[224,448,13],2,6],["15x16",[191,382,10],[225,450,14],2,6],["16x17",[194,388,12],[154,308,9],2,6],["17x18",[194,388,11],[170,340,10],2,6],["18x19",[139,278,9],[149,298,10],2,6]],[["SM",1],["AC",1],["AC",1],["AC",1],["SM",2],["RE",2],["AC",2],["AC",2],["AC",2],["AC",2]]],["2026-08-19","19x01",2,6,[["19x20",[130,260,8],[90,180,5],2,6],["20x21",[184,368,11],[174,348,10],2,6],["21x22",[140,280,7],[190,380,11],2,6],["22x23",[166,332,11],[157,314,10],2,6],["23x00",[215,430,13],[184,368,11],2,6],["00x01",[148,296,9],[172,344,9],2,6]],[["SM",1],["EF",1],["SM",2],["EF",2],["AD",2],["AD",2],["OT",2]]],["2026-08-20","01x07",1,6,[["01x02",[0,0,0],[84,168,5],1,6],["02x03",[30,60,4],[175,350,12],1,6],["03x04",[121,242,7],[204,408,11],1,6],["04x05",[50,100,5],[204,408,11],1,6],["05x06",[81,162,5],[205,410,14],1,6],["06x07",[20,40,1],[174,348,10],1,6]],[["OH",1],["OT",1],["OH",1],["PA",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AD",1],["SM",2]]],["2026-08-20","07x13",1,6,[["07x08",[89,178,3],[184,368,10],1,6],["08x09",[185,370,12],[203,406,13],1,6],["09x10",[221,442,12],[194,388,11],1,6],["10x11",[100,200,5],[182,364,10],1,6]],[["SM",1],["VC",1],["AD",1],["SM",2],["VC",2]]]];
+const SOF_GV=[["2026-08-18","07×13",3,7,[["07×08",[120,240,9],[90,180,6],3,7],["08×09",[229,458,13],[126,252,7],3,7],["09×10",[254,508,14],[153,306,10],3,7],["10×11",[227,454,15],[234,468,13],3,7],["11×12",[316,632,19],[215,430,14],3,7],["12×13",[218,436,12],[154,308,9],3,7]],[["SM",1],["EF",1],["SM",2],["RE",2],["AC",2],["AC",2],["AC",2],["EF",2],["EF",2],["AC",2],["AC",2]]],["2026-08-18","13×19",3,7,[["13×14",[69,138,6],[74,148,5],3,7],["14×15",[142,284,8],[120,240,6],3,7],["15×16",[174,348,10],[164,328,10],3,7],["16×17",[104,208,6],[91,182,6],3,7],["17×18",[100,200,6],[74,148,5],3,7],["18×19",[71,142,5],[100,200,5],3,7]],[["SM",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["OT",1],["AC",1],["SM",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["RE",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2]]],["2026-08-18","19×01",3,7,[["19×20",[94,188,6],[138,276,8],3,7],["20×21",[174,348,10],[190,380,12],3,7],["21×22",[202,404,12],[165,330,11],3,7],["22×23",[157,314,10],[194,388,11],3,7],["23×00",[194,388,11],[209,418,11],3,7],["00×01",[198,396,11],[180,360,10],3,7]],[["SM",1],["VC",1],["RE",1],["RE",1],["AT",1],["SM",2]]],["2026-08-19","01×07",3,7,[["01×02",[156,312,9],[130,260,7],3,7],["02×03",[185,370,12],[114,228,7],3,7],["03×04",[154,308,9],[100,200,5],3,7],["04×05",[80,160,4],[154,308,9],3,6],["05×06",[164,328,10],[105,210,7],2,6],["06×07",[105,210,8],[109,218,10],2,6]],[["SM",1],["AC",1],["AC",1],["AC",1],["AC",1],["SH",1],["AC",1],["AC",1],["SM",2],["AC",2],["AC",2],["AC",2],["AC",2],["AC",2],["SH",2],["AD",2]]],["2026-08-19","07×13",2,5,[["07×08",[152,304,8],[102,204,6],2,5],["08×09",[266,532,15],[149,298,3],2,5],["09×10",[185,370,13],[166,332,11],2,5],["10×11",[234,468,13],[164,328,12],2,5],["11×12",[184,368,10],[83,166,6],2,5],["12×13",[185,370,13],[162,324,9],2,5]],[["SM",1],["EF",1],["SM",2],["AC",2],["AC",2],["OT",2]]],["2026-08-19","13×19",2,6,[["13×14",[174,348,10],[154,308,9],2,6],["14×15",[174,348,9],[224,448,13],2,6],["15×16",[191,382,10],[225,450,14],2,6],["16×17",[194,388,12],[154,308,9],2,6],["17×18",[194,388,11],[170,340,10],2,6],["18×19",[139,278,9],[149,298,10],2,6]],[["SM",1],["AC",1],["AC",1],["AC",1],["SM",2],["RE",2],["AC",2],["AC",2],["AC",2],["AC",2]]],["2026-08-19","19×01",2,6,[["19×20",[130,260,8],[90,180,5],2,6],["20×21",[184,368,11],[174,348,10],2,6],["21×22",[140,280,7],[190,380,11],2,6],["22×23",[166,332,11],[157,314,10],2,6],["23×00",[215,430,13],[184,368,11],2,6],["00×01",[148,296,9],[172,344,9],2,6]],[["SM",1],["EF",1],["SM",2],["EF",2],["AD",2],["AD",2],["OT",2]]],["2026-08-20","01×07",1,6,[["01×02",[0,0,0],[84,168,5],1,6],["02×03",[30,60,4],[175,350,12],1,6],["03×04",[121,242,7],[204,408,11],1,6],["04×05",[50,100,5],[204,408,11],1,6],["05×06",[81,162,5],[205,410,14],1,6],["06×07",[20,40,1],[174,348,10],1,6]],[["OH",1],["OT",1],["OH",1],["PA",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AC",1],["AD",1],["SM",2]]],["2026-08-20","07×13",1,6,[["07×08",[89,178,3],[184,368,10],1,6],["08×09",[185,370,12],[203,406,13],1,6],["09×10",[221,442,12],[194,388,11],1,6],["10×11",[100,200,5],[182,364,10],1,6]],[["SM",1],["VC",1],["AD",1],["SM",2],["VC",2]]]];
 
 // ══════════════════════════════════════════════════════════
 //  CARGA DEMO / LIMPAR HISTÓRICO  —  restrito
@@ -2295,7 +2318,7 @@ async function cargaDemo(){
     pts.push({ponto:'SEGREGADAS',qtd:64,sku:'TSP-EP',cap:0});
     const totCont=pts.reduce((a,b)=>a+b.qtd,0);
     lote.push({col:'contagens_armazem',doc:{
-      data:diasAtras(1), turno:'C', periodo:'19x01', responsavel:'MICHEL ALVES',
+      data:diasAtras(1), turno:'C', periodo:'19\u00d701', responsavel:'MICHEL ALVES',
       matricula:454264, funcao:'CONTROLADOR', pontos:pts,
       totalAtados:totCont, totalTon:totCont*2,
       estoqueLancado:totCont-rnd(20,90), divergencia:rnd(20,90), demo:true}});
@@ -2421,7 +2444,7 @@ function montaGradeAvaria(){
   const cols='grid-template-columns:56px 1.3fr 1fr;';
   let h=`<div class="hh-cab" style="${cols}"><span>Hora</span><span>Sigla</span><span>Atados</span></div>`;
   h+=hs.map(hr=>{
-    const id=hr.replace('x','');
+    const id=hr.replace('\u00d7','');
     return `<div class="hh-lin" id="avaria-l-${id}" style="${cols}">
       <div class="hh-h">${hr}</div>
       <input type="text" id="avaria-sku-${id}" placeholder="TSP-EP" oninput="calcHH('avaria')" style="text-transform:uppercase;">
@@ -2436,7 +2459,7 @@ function montaGradeHH(destino, campos, prefixo){
   const cols=`grid-template-columns:56px ${campos.map(()=>'1fr').join(' ')};`;
   let h=`<div class="hh-cab" style="${cols}"><span>Hora</span>${campos.map(c=>`<span>${c.rot}</span>`).join('')}</div>`;
   h+=hs.map(hr=>{
-    const id=hr.replace('x','');
+    const id=hr.replace('\u00d7','');
     return `<div class="hh-lin" id="${prefixo}-l-${id}" style="${cols}">
       <div class="hh-h">${hr}</div>
       ${campos.map(c=>`<input type="text" inputmode="numeric" id="${prefixo}-${c.k}-${id}"
@@ -2448,7 +2471,7 @@ function montaGradeHH(destino, campos, prefixo){
 
 function lerHH(prefixo, campos){
   return horasDoPeriodo().map(hr=>{
-    const id=hr.replace('x','');
+    const id=hr.replace('\u00d7','');
     const o={hora:hr};
     let algum=false;
     campos.forEach(c=>{const v=nDec(`${prefixo}-${c.k}-${id}`); o[c.k]=v; if(v!=null&&v>0)algum=true;});
@@ -2458,7 +2481,7 @@ function lerHH(prefixo, campos){
 
 function calcHH(prefixo){
   horasDoPeriodo().forEach(hr=>{
-    const id=hr.replace('x','');
+    const id=hr.replace('\u00d7','');
     const lin=document.getElementById(`${prefixo}-l-${id}`);
     if(lin)lin.classList.toggle('tem',[...lin.querySelectorAll('input')].some(i=>i.value.trim()));
   });
@@ -2477,7 +2500,7 @@ function calcHH(prefixo){
   if(prefixo==='avaria'){
     const l=lerHH('avaria',[{k:'at'}]);
     const a=l.reduce((s,x)=>s+(x.at||0),0);
-    const sk=[...new Set(horasDoPeriodo().map(hr=>document.getElementById('avaria-sku-'+hr.replace('x',''))?.value.trim()).filter(Boolean))];
+    const sk=[...new Set(horasDoPeriodo().map(hr=>document.getElementById('avaria-sku-'+hr.replace('\u00d7',''))?.value.trim()).filter(Boolean))];
     document.getElementById('avar-calc').textContent=
       a?`${a} atados × ${TON_ATADO_AUX} t = ${fmtT(a*TON_ATADO_AUX)} toneladas${sk.length?' · '+sk.join(', '):''}`:'';
   }
@@ -2517,9 +2540,10 @@ async function loadRetaguarda(){
     return;
   }
   const sel=document.getElementById('est-hora');
-  if(sel&&!sel.dataset.init){
-    sel.innerHTML=(HORAS_PERIODO[PER_LABELS[curPeriodo()]]||[]).map(h=>`<option>${h}</option>`).join('');
-    sel.dataset.init='1';
+  if(sel){
+    const hs=HORAS_PERIODO[PER_LABELS[curPeriodo()]]||[];
+    sel.innerHTML=hs.map(h=>`<option>${h}</option>`).join('');
+    sel.value=horaSugerida();
   }
   montaContagem();
   await carregaUltContagem();
@@ -2557,6 +2581,32 @@ async function salvarProg(){
     ['pg-prefixo','pg-vagoes','pg-carretas','pg-ton','pg-sku','pa-carretas','pa-ton','pa-sku']
       .forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
     document.querySelectorAll('input[name="prog-t"]').forEach(r=>r.checked=false); togProg();
+  }catch(e){toast('Erro: '+e.message,'danger');}
+}
+
+// Edita uma programação aberta
+async function editarProg(id){
+  const p=progAbertas.find(x=>x.id===id);
+  if(!p)return;
+  let campos;
+  if(p.tipo==='ferro'){
+    const pfx=prompt('Prefixo:',p.prefixo); if(pfx===null)return;
+    const vg=prompt('Vagões programados:',p.vagoesProg); if(vg===null)return;
+    const v=parseFloat(String(vg).replace(',','.'));
+    if(!pfx.trim()||!(v>0)){toast('Valores inválidos.','danger');return;}
+    campos={prefixo:pfx.trim().toUpperCase(),vagoesProg:v,tonProg:v*TON_VAGAO};
+  }else{
+    const car=prompt('Carretas programadas:',p.carretasProg); if(car===null)return;
+    const ton=prompt('Toneladas programadas:',p.tonProg); if(ton===null)return;
+    const sku=prompt('SKU:',p.sku); if(sku===null)return;
+    const c=parseFloat(String(car).replace(',','.')), t=parseFloat(String(ton).replace(',','.'));
+    if(!(c>0)||!(t>0)||!sku.trim()){toast('Valores inválidos.','danger');return;}
+    campos={carretasProg:c,tonProg:t,sku:sku.trim().toUpperCase()};
+  }
+  try{
+    await db.collection('programacoes').doc(id).update({...campos,
+      editadoEm:new Date().toISOString(), editadoPor:currentLider?.nome||''});
+    toast('Programação atualizada.','success');
   }catch(e){toast('Erro: '+e.message,'danger');}
 }
 
@@ -2613,7 +2663,10 @@ function pintaProgs(){
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px;">
         <div><b style="font-size:13px;">${tit}</b>
           <span style="font-size:10.5px;color:#7a8fa6;font-weight:600;"> · aberta por ${p.abertaPor||'—'}</span></div>
-        <button class="btn btn-sec btn-sm" onclick="encerrarProg('${p.id}')">✓ Concluir</button>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sec btn-sm" onclick="editarProg('${p.id}')">✏️</button>
+          <button class="btn btn-sec btn-sm" onclick="encerrarProg('${p.id}')">✓ Concluir</button>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="flex:1;background:#fff;border-radius:5px;height:19px;overflow:hidden;border:1px solid var(--border);">
@@ -2823,12 +2876,17 @@ function verMapa(){
       <div class="mini-stat t"><div class="v">${fmtT(tot*TON_ATADO)}</div><div class="l">Toneladas</div></div>
       <div class="mini-stat g"><div class="v">${fmtT(capTot-tot)}</div><div class="l">Espaço livre</div></div>
     </div>
+    <div class="mp-ramal">
+      <div class="mp-rl">🚂 RAMAL FERROVIÁRIO — 40 vagões · L1 lado terra · L4 junto ao buffer</div>
+      ${['L4','L3','L2','L1'].map(l=>`<div class="mp-via"><span class="mp-vn">${l}</span>
+        ${[...Array(10)].map(()=>'<div class="mp-vg"></div>').join('')}</div>`).join('')}
+    </div>
+    <div class="mp-lado">Buffer</div>
+    <div class="mp-fila">${cel('BUFFER')}</div>
     <div class="mp-lado">Lado terra — V08 · V21 a V09</div>
     <div class="mp-fila">${TERRA_SEQ.map(cel).join('')}</div>
     <div class="mp-lado">Lado mar — Avarias · Segregadas · V07 a V01</div>
     <div class="mp-fila">${MAR_SEQ.map(cel).join('')}</div>
-    <div class="mp-lado">Buffer</div>
-    <div class="mp-fila">${cel('BUFFER')}</div>
     <div class="mp-leg">${skus.map(k=>`<span><i style="background:${corSku(k)}"></i>${k}</span>`).join('')}</div>`;
   document.getElementById('mapa-modal').style.display='flex';
 }
