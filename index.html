@@ -1767,6 +1767,13 @@ async function salvarNavio(){
     ativo:true, criadoEm:new Date().toISOString()
   };
   try{
+    // garante um único navio com ativo:true
+    const ativos=await db.collection('navios').where('ativo','==',true).get();
+    if(!ativos.empty){
+      const bt=db.batch(); let mexeu=false;
+      ativos.forEach(d=>{ if(!navioAtual||d.id!==navioAtual.id){bt.update(d.ref,{ativo:false});mexeu=true;} });
+      if(mexeu)await bt.commit();
+    }
     if(navioAtual?.id) await db.collection('navios').doc(navioAtual.id).set(rec);
     else await db.collection('navios').add(rec);
     document.getElementById('nav-modal').style.display='none';
@@ -2182,6 +2189,12 @@ async function cargaDemo(){
   btn.disabled=true; btn.textContent='Carregando...';
 
   try{
+    // ── 0. Nenhum navio ativo sobra para trás ──
+    const antigos=await db.collection('navios').where('ativo','==',true).get();
+    if(!antigos.empty){
+      const b0=db.batch(); antigos.forEach(d=>b0.update(d.ref,{ativo:false})); await b0.commit();
+    }
+
     // ── 1. Navio ──
     const poroes={1:1794,2:7048,3:7236,5:1650,6:8442,7:6030};
     const navRef=await db.collection('navios').add({
@@ -2192,6 +2205,7 @@ async function cargaDemo(){
     });
 
     const lote=[];
+    const hojeD=diasAtras(0), turnoHoje=APP_DATA.escala[hojeD]?.[curPeriodo()]||'A';
     const poroesAtivos=Object.keys(poroes).map(Number);
 
     // ── 2. 15 dias de operação ──
@@ -2219,6 +2233,7 @@ async function cargaDemo(){
           {atv:'abastecimento', det:''},
           {atv:'recebimento', det:ferro?'Ferro':'Rodo'}
         ];
+        if(d===0)frentes.push({atv:'recebimento', det:ferro?'Rodo':'Ferro'});
         if(auxTurno.length>=5)frentes.push({atv:pick(['armazenagem','limpeza','avarias']),det:''});
 
         frentes.forEach((f,idx)=>{
@@ -2232,8 +2247,11 @@ async function cargaDemo(){
           if(f.atv==='embarque'){
             const t=rnd(140,320); producao={unidade:'ton',valor:t,tonHora:t};
           }else if(f.atv==='recebimento'){
-            if(ferro){const v=rnd(4,9); producao={unidade:'ton',valor:v*96,qtd:v,unidadeQtd:'vagões',fator:96};}
-            else{const a=rnd(60,180); producao={unidade:'ton',valor:a*2,qtd:a,unidadeQtd:'atados',fator:2};}
+            if(f.det==='Ferro'){const v=rnd(7,12);
+              producao={tipo:'Ferro',unidade:'ton',valor:v*96,qtd:v,unidadeQtd:'vagões',fator:96,horas:[]};}
+            else{const a=rnd(60,180);
+              producao={tipo:'Rodo',unidade:'ton',valor:a*2,qtd:a,carretas:Math.max(1,Math.round(a/20)),
+                        sku:pick(['RSP-EP','TSP-EP','LSP-EP']),unidadeQtd:'atados',fator:2,horas:[]};}
           }else if(f.atv==='armazenagem'){
             const vv=['V0'+rnd(1,9),'V1'+rnd(0,9)]; detalhe='Vãos: '+vv.join(', ');
             producao={unidade:'ton',valor:rnd(200,600)};
@@ -2255,7 +2273,9 @@ async function cargaDemo(){
             atividade:f.atv, detalhe, hora:hh(idx),
             efetivo:{auxCasa:1,opCasa:maqs.length,ogmo:f.atv==='embarque'?2:0,terc:0,
                      casa:1+maqs.length,externo:f.atv==='embarque'?2:0,total:1+maqs.length+(f.atv==='embarque'?2:0)},
-            frente:{inicio:hh(idx),fim:hh(idx+2),ativa:false},
+            frente:(d===0&&pi===curPeriodo()&&idx<2)
+                   ?{inicio:hh(idx),fim:'',ativa:true}
+                   :{inicio:hh(idx),fim:hh(idx+2),ativa:false},
             producao,
             recursos:{
               coletores:{qtd:rnd(1,3),nums:'0'+rnd(1,9),obs:''},
@@ -2277,13 +2297,24 @@ async function cargaDemo(){
     }
 
     // ── 2b. Embarque hora a hora: dados REAIS do Green Vitória (folhas 18 a 20/08) ──
+    // as folhas reais são de 18 a 20/08; desloca para a última cair hoje
+    const desloca=d=>{
+      const base=new Date('2026-08-19T12:00:00'), alvo=new Date(hojeD+'T12:00:00');
+      return new Date(new Date(d+'T12:00:00').getTime()+(alvo-base)).toISOString().slice(0,10);
+    };
+    const agoraH=new Date().getHours();
     SOF_GV.forEach(([data,periodo,p1,p2,linhas,pars])=>{
       const pIdx=PER_LABELS.indexOf(periodo);
+      const dataR=desloca(data), ehHoje=dataR===hojeD;
+      if(dataR>hojeD)return;                      // folha ainda não aconteceu
       linhas.forEach(([hora,t1,t2,pa,pb],li)=>{
+        const iniH=parseInt(String(hora).slice(0,2),10);
+        const iniEfet=(periodo===PER_LABELS[2]&&iniH<7)?iniH+24:iniH;    // 23×00 e 00×01 viram madrugada
+        if(ehHoje&&iniEfet>agoraH)return;                                 // não lança hora futura
         const par=pars.filter(x=>x[1]===1||x[1]===2)[li];
         lote.push({col:'embarque_horas',doc:{
           navioId:navRef.id, navio:'GREEN VITORIA', berco:32,
-          data, periodo, periodoIdx:pIdx, hora, produto:'Atados de Celulose',
+          data:dataR, periodo, periodoIdx:pIdx, hora, produto:'Atados de Celulose',
           ternos:[
             {terno:1,porao:pa||p1,atados:t1[0],ton:t1[1],carretas:t1[2]},
             {terno:2,porao:pb||p2,atados:t2[0],ton:t2[1],carretas:t2[2]}
@@ -2296,7 +2327,6 @@ async function cargaDemo(){
     });
 
     // ── 2c. Programações, estoque por hora e contagem do armazém ──
-    const hojeD=diasAtras(0), turnoHoje=APP_DATA.escala[hojeD]?.[curPeriodo()]||'A';
     lote.push({col:'programacoes',doc:{tipo:'ferro',prefixo:'L34',vagoesProg:64,tonProg:64*96,
       data:hojeD,turno:turnoHoje,periodo:PER_LABELS[curPeriodo()],aberta:true,
       abertaPor:'MICHEL ALVES',criadoEm:new Date().toISOString(),demo:true}});
@@ -2304,15 +2334,21 @@ async function cargaDemo(){
       data:hojeD,turno:turnoHoje,periodo:PER_LABELS[curPeriodo()],aberta:true,
       abertaPor:'MICHEL ALVES',criadoEm:new Date().toISOString(),demo:true}});
 
-    // estoque por hora do dia, caindo conforme o embarque
-    let estoque=5160;
-    (HORAS_PERIODO[PER_LABELS[curPeriodo()]]||[]).forEach((h,i)=>{
-      if(i>new Date().getHours()%6)return;
-      estoque-=rnd(60,180);
-      lote.push({col:'estoque_horas',doc:{
-        data:hojeD, periodo:PER_LABELS[curPeriodo()], hora:h, turno:turnoHoje,
-        atadosGeral:estoque, atadosAvaria:34, tonGeral:estoque*2, tonAvaria:68,
-        total:estoque+34, tonTotal:(estoque+34)*2, lancadoPor:'MICHEL ALVES', demo:true}});
+    // estoque por hora, do começo do dia até a hora corrente
+    let estoque=7400;
+    [3,0,1,2].forEach(pi=>{            // ordem do relógio: 01×07, 07×13, 13×19, 19×01
+      (HORAS_PERIODO[PER_LABELS[pi]]||[]).forEach(h=>{
+        const ini=parseInt(String(h).slice(0,2),10);
+        if(pi===2&&ini<19)return;       // 23×00 e 00×01 são do dia seguinte
+        if(pi===3&&ini>=7)return;
+        if(ini>agoraH)return;
+        estoque=Math.max(900,estoque-rnd(60,180));
+        const av=rnd(28,42);
+        lote.push({col:'estoque_horas',doc:{
+          data:hojeD, periodo:PER_LABELS[pi], hora:h, turno:APP_DATA.escala[hojeD]?.[pi]||turnoHoje,
+          atadosGeral:estoque, atadosAvaria:av, tonGeral:estoque*2, tonAvaria:av*2,
+          total:estoque+av, tonTotal:(estoque+av)*2, lancadoPor:'MICHEL ALVES', demo:true}});
+      });
     });
 
     // contagem do armazém de ontem
@@ -2335,7 +2371,7 @@ async function cargaDemo(){
     pts.push({ponto:'SEGREGADAS',qtd:64,sku:'TSP-EP',cap:0});
     const totCont=pts.reduce((a,b)=>a+b.qtd,0);
     lote.push({col:'contagens_armazem',doc:{
-      data:diasAtras(1), turno:'C', periodo:'19\u00d701', responsavel:'MICHEL ALVES',
+      data:hojeD, turno:turnoHoje, periodo:PER_LABELS[curPeriodo()], responsavel:'MICHEL ALVES',
       matricula:454264, funcao:'CONTROLADOR', pontos:pts,
       totalAtados:totCont, totalTon:totCont*2,
       estoqueLancado:totCont-rnd(20,90), divergencia:rnd(20,90), demo:true}});
