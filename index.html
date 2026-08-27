@@ -327,7 +327,7 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
   <div class="hdr-right">
     <span class="tbadge" id="tbadge"></span>
     <div class="ubadge" id="ubadge"><div class="dot"></div><span id="ulabel"></span></div>
-    <button class="btn btn-sm" id="btn-kpi" style="display:none;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.35);" onclick="showPage('pg-kpi');loadKPI()">📊 KPI</button>
+    <button class="btn btn-sm" id="btn-kpi" style="display:none;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.35);" onclick="showPage('pg-kpi');loadKPI()">🗂️ Painel</button>
     <button class="btn btn-sm" id="btn-logout" style="display:none;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);" onclick="doLogout()">Sair</button>
   </div>
 </header>
@@ -361,7 +361,7 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
     <div class="field"><label>Nome ou Matrícula</label><input type="text" id="inp-lid" placeholder="Ex: 451499 ou PEDRO CARDOSO" onkeydown="if(event.key==='Enter')doLoginLid()"></div>
     <div class="field"><label>Senha</label><input type="password" id="inp-senha" placeholder="Sua senha" onkeydown="if(event.key==='Enter')doLoginLid()"></div>
     <div class="err" id="err-lid">Credenciais inválidas.</div>
-    <button class="btn btn-primary btn-full" onclick="doLoginLid()">Acessar KPI</button>
+    <button class="btn btn-primary btn-full" onclick="doLoginLid()">Acessar Painel</button>
     <p style="font-size:11px;color:#aab4be;margin-top:10px;text-align:center;">Dúvidas sobre senha? Fale com o coordenador.</p>
   </div>
 </div>
@@ -608,7 +608,9 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
     <button id="btn-demo" class="btn btn-sm" onclick="cargaDemo()"
       style="background:var(--danger);color:#fff;font-weight:800;letter-spacing:.03em;">⚠ CARGA DEMO</button>
     <button id="btn-limpar" class="btn btn-sm btn-sec" onclick="limparHistorico()"
-      style="border-color:var(--danger);color:var(--danger);font-weight:800;">🗑 LIMPAR HISTÓRICO</button>
+      style="border-color:var(--danger);color:var(--danger);font-weight:800;">🗑 APAGAR TUDO</button>
+    <button id="btn-purgar" class="btn btn-sm btn-sec" onclick="purgar30()"
+      style="border-color:var(--orange);color:var(--orange);font-weight:800;">📦 APAGAR ANTERIORES A 30 DIAS</button>
   </div>
   <div class="nav-tabs" id="kpi-nav">
     <div class="tab active" onclick="showKTab('dash')">📊 Dashboard</div>
@@ -633,6 +635,10 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
       <h3><div class="icon ib">📋</div>Programações do Turno</h3>
       <p style="font-size:12px;color:#7a8fa6;margin-bottom:12px;">O que está programado. O avanço vem dos lançamentos dos auxiliares.</p>
       <div id="prog-abertas"></div>
+      <div id="inv-bloco" style="display:none;border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
+        <p class="sub-rot">Inversão do ramal</p>
+        <div id="inv-estado"></div>
+      </div>
       <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
         <p class="sub-rot">Nova programação</p>
         <div class="chips" id="prog-tipo">
@@ -645,6 +651,12 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
             <div class="fgrp"><label>Prefixo *</label><input type="text" id="pg-prefixo" placeholder="L34" style="text-transform:uppercase;"></div>
             <div class="fgrp"><label>Vagões programados *</label><input type="text" inputmode="numeric" id="pg-vagoes" placeholder="64"></div>
           </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px;">
+            <div class="fgrp"><label>1º lote (antes da inversão)</label><input type="text" inputmode="numeric" id="pg-lote1" placeholder="40"></div>
+            <div class="fgrp"><label>Vagões da inversão</label><input type="text" inputmode="numeric" id="pg-inv" placeholder="24"></div>
+          </div>
+          <p style="font-size:10.5px;color:#7a8fa6;margin-top:6px;line-height:1.5;">
+            Em branco, assume 40 no primeiro lote e o restante na inversão.</p>
         </div>
         <div id="prog-rodo" style="display:none;margin-top:9px;">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;">
@@ -2494,7 +2506,15 @@ async function cargaDemo(){
     });
 
     // ── 2c. Programações, estoque por hora e contagem do armazém ──
+    lote.push({col:'inversoes',doc:{
+      data:hojeD, periodo:PER_LABELS[curPeriodo()], periodoIdx:curPeriodo(), turno:turnoHoje,
+      prefixo:'L34', programacaoId:null,
+      solicitadoEm:new Date(Date.now()-52*60000).toISOString(), solicitadoPor:'STEFANI VIEIRA',
+      matriculaSolicitou:459478,
+      concluidoEm:new Date(Date.now()-14*60000).toISOString(), concluidoPor:'STEFANI VIEIRA',
+      minutos:38, demo:true}});
     lote.push({col:'programacoes',doc:{tipo:'ferro',prefixo:'L34',vagoesProg:64,tonProg:64*96,
+      vagoesLote1:40, vagoesInversao:24,
       data:hojeD,turno:turnoHoje,periodo:PER_LABELS[curPeriodo()],aberta:true,
       abertaPor:'MICHEL ALVES',criadoEm:new Date().toISOString(),demo:true}});
     lote.push({col:'programacoes',doc:{tipo:'rodo',carretasProg:22,tonProg:616,sku:'RSP-EP',
@@ -2568,6 +2588,156 @@ async function cargaDemo(){
   }
 }
 
+// ══════════════════════════════════════════════════════════
+//  RETENÇÃO  —  exporta e apaga o que passou de 30 dias
+// ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+//  INVERSÃO DO RAMAL  —  controlador e assistente
+// ══════════════════════════════════════════════════════════
+let _invAberta=null;
+const podeInverter=()=>{
+  const f=(currentLider?.funcao||'').toUpperCase();
+  return f.includes('CONTROLADOR')||f.includes('ASSISTENTE');
+};
+
+function escutaInversoes(){
+  if(!db)return;
+  db.collection('inversoes').where('data','in',[diasAtras(1),diasAtras(0)])
+    .onSnapshot(s=>{
+      const lista=s.docs.map(d=>({id:d.id,...d.data()}));
+      _invAberta=lista.find(x=>x.solicitadoEm&&!x.concluidoEm)||null;
+      pintaInversao(lista);
+    },e=>console.error(e));
+}
+
+let _invLista=[];
+function pintaInversao(lista){
+  if(lista)_invLista=lista; else lista=_invLista;
+  const bloco=document.getElementById('inv-bloco');
+  const box=document.getElementById('inv-estado');
+  if(!bloco||!box)return;
+  const temFerro=(window._progsAbertas||[]).some(p=>p.tipo==='ferro');
+  if(!temFerro){bloco.style.display='none';return;}
+  bloco.style.display='block';
+
+  const fechadas=(lista||[]).filter(x=>x.concluidoEm);
+  const hist=fechadas.length
+    ? `<p style="font-size:11px;color:#7a8fa6;margin-top:9px;">
+        ${fechadas.length} manobra(s) conclu\u00edda(s) \u00b7 m\u00e9dia de
+        ${Math.round(fechadas.reduce((s,x)=>s+(x.minutos||0),0)/fechadas.length)} min</p>`
+    : '';
+
+  if(_invAberta){
+    const min=Math.round((Date.now()-new Date(_invAberta.solicitadoEm).getTime())/60000);
+    box.innerHTML=`
+      <div style="background:rgba(232,132,26,.12);color:#b8630a;border-radius:8px;padding:10px 12px;
+           font-size:12.5px;font-weight:700;margin-bottom:9px;">
+        Solicitada \u00e0s ${String(_invAberta.solicitadoEm).slice(11,16)} \u00b7 aguardando h\u00e1 ${min} min
+        <br><span style="font-weight:600;font-size:11px;">por ${_invAberta.solicitadoPor||''}</span>
+      </div>
+      ${podeInverter()
+        ?'<button class="btn btn-primary btn-sm" onclick="concluirInversao()">Inversão concluída</button>'
+        :'<p style="font-size:11px;color:#7a8fa6;">Só controlador ou assistente registra a conclusão.</p>'}
+      ${hist}`;
+  }else{
+    box.innerHTML=`
+      ${podeInverter()
+        ?'<button class="btn btn-sec btn-sm" onclick="solicitarInversao()">Solicitar inversão</button>'
+        :'<p style="font-size:11px;color:#7a8fa6;">Só controlador ou assistente solicita a inversão.</p>'}
+      ${hist}`;
+  }
+}
+
+async function solicitarInversao(){
+  if(!podeInverter()){toast('Sem permissão para solicitar inversão.','danger');return;}
+  if(_invAberta){toast('Já existe uma inversão em aberto.','danger');return;}
+  const pf=(window._progsAbertas||[]).find(p=>p.tipo==='ferro');
+  try{
+    await db.collection('inversoes').add({
+      data:diasAtras(0), periodo:PER_LABELS[curPeriodo()], periodoIdx:curPeriodo(),
+      turno:APP_DATA.escala[diasAtras(0)]?.[curPeriodo()]||'',
+      prefixo:pf?.prefixo||'', programacaoId:pf?.id||null,
+      solicitadoEm:new Date().toISOString(), solicitadoPor:currentLider?.nome||'',
+      matriculaSolicitou:currentLider?.mat||null,
+      concluidoEm:null, minutos:null
+    });
+    toast('Inversão solicitada.','success');
+  }catch(e){toast('Erro: '+e.message,'danger');}
+}
+
+async function concluirInversao(){
+  if(!podeInverter()){toast('Sem permissão.','danger');return;}
+  if(!_invAberta)return;
+  const fim=new Date();
+  const min=Math.round((fim-new Date(_invAberta.solicitadoEm))/60000);
+  try{
+    await db.collection('inversoes').doc(_invAberta.id).update({
+      concluidoEm:fim.toISOString(), concluidoPor:currentLider?.nome||'', minutos:min
+    });
+    toast(`Inversão concluída em ${min} min.`,'success');
+  }catch(e){toast('Erro: '+e.message,'danger');}
+}
+
+async function purgar30(){
+  if(!ehAdmin()||!db)return;
+  const corte=diasAtras(30);
+  if(!confirm(`Apagar tudo anterior a ${corte.split('-').reverse().join('/')}?\n\n`+
+              'Um arquivo JSON com esses dados será baixado antes.\n'+
+              'Guarde o arquivo: não há como recuperar depois.'))return;
+  const btn=document.getElementById('btn-purgar');
+  btn.disabled=true; btn.textContent='Exportando...';
+  const dump={geradoEm:new Date().toISOString(), corte, colecoes:{}};
+  const alvos=[];
+  try{
+    // 1. coleta tudo que será apagado
+    for(const col of ['registros','embarque_horas','estoque_horas','contagens_armazem','inversoes']){
+      const snap=await db.collection(col).where('data','<',corte).get();
+      dump.colecoes[col]=snap.docs.map(d=>({id:d.id,...d.data()}));
+      snap.docs.forEach(d=>alvos.push(d.ref));
+    }
+    // navios e programações não têm campo data; usa a criação
+    for(const col of ['navios','programacoes']){
+      const snap=await db.collection(col).get();
+      const velhos=snap.docs.filter(d=>{
+        const c=d.data().criadoEm||'';
+        return c && String(c).slice(0,10)<corte && d.data().ativo!==true && d.data().aberta!==true;
+      });
+      dump.colecoes[col]=velhos.map(d=>({id:d.id,...d.data()}));
+      velhos.forEach(d=>alvos.push(d.ref));
+    }
+    const total=alvos.length;
+    if(!total){ toast('Nada anterior a 30 dias para apagar.','info');
+      btn.disabled=false; btn.textContent='📦 APAGAR ANTERIORES A 30 DIAS'; return; }
+
+    // 2. baixa o arquivo antes de apagar
+    const blob=new Blob([JSON.stringify(dump,null,1)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`gav-t32-backup-ate-${corte}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+
+    if(!confirm(`${total} registros exportados.\n\nConfira se o arquivo foi baixado.\n`+
+                'Confirma o apagamento?')){
+      btn.disabled=false; btn.textContent='📦 APAGAR ANTERIORES A 30 DIAS'; return; }
+
+    // 3. apaga em lotes
+    btn.textContent='Apagando...';
+    for(let i=0;i<alvos.length;i+=400){
+      const batch=db.batch();
+      alvos.slice(i,i+400).forEach(r=>batch.delete(r));
+      await batch.commit();
+      btn.textContent=`Apagando ${Math.min(i+400,total)} de ${total}...`;
+    }
+    toast(`${total} registros apagados. Backup baixado.`,'success');
+    setTimeout(()=>location.reload(),1500);
+  }catch(e){
+    toast('Erro: '+e.message,'danger');
+  }finally{
+    btn.disabled=false; btn.textContent='📦 APAGAR ANTERIORES A 30 DIAS';
+  }
+}
+
 async function limparHistorico(){
   if(!ehAdmin()||!db)return;
   if(!confirm('APAGAR TODO O HISTÓRICO?\n\nRegistros, embarque, navios, programações, estoque e contagens serão excluídos.\nO inventário é preservado.\n\nEsta ação não pode ser desfeita.'))return;
@@ -2576,7 +2746,7 @@ async function limparHistorico(){
   btn.disabled=true; btn.textContent='Apagando...';
   let n=0;
   try{
-    for(const col of ['registros','embarque_horas','navios','programacoes','estoque_horas','contagens_armazem']){
+    for(const col of ['registros','embarque_horas','navios','programacoes','estoque_horas','contagens_armazem','inversoes']){
       while(true){
         const snap=await db.collection(col).limit(400).get();
         if(snap.empty)break;
@@ -2593,7 +2763,7 @@ async function limparHistorico(){
   }catch(e){
     toast('Erro ao apagar: '+e.message,'danger');
   }finally{
-    btn.disabled=false; btn.textContent='🗑 LIMPAR HISTÓRICO';
+    btn.disabled=false; btn.textContent='🗑 APAGAR TUDO';
   }
 }
 
@@ -2787,7 +2957,9 @@ async function salvarProg(){
     const pfx=document.getElementById('pg-prefixo').value.trim().toUpperCase();
     const vg=nDec('pg-vagoes');
     if(!pfx||!(vg>0)){toast('Informe prefixo e vagões.','danger');return;}
-    rec={...rec,prefixo:pfx,vagoesProg:vg,tonProg:vg*TON_VAGAO};
+    const l1=parseInt(document.getElementById('pg-lote1').value,10)||Math.min(40,vg);
+    const l2=parseInt(document.getElementById('pg-inv').value,10)||Math.max(0,vg-l1);
+    rec={...rec,prefixo:pfx,vagoesProg:vg,tonProg:vg*TON_VAGAO,vagoesLote1:l1,vagoesInversao:l2};
   }else{
     const p=t==='rodo'?'pg':'pa';
     const car=nDec(p+'-carretas'), ton=nDec(p+'-ton');
@@ -2851,7 +3023,12 @@ function escutaRetaguarda(){
       },e=>console.error(e));
   }catch(e){console.error(e);}
   db.collection('programacoes').where('aberta','==',true)
-    .onSnapshot(s=>{progAbertas=s.docs.map(d=>({id:d.id,...d.data()}));pintaProgs();},e=>console.error(e));
+    .onSnapshot(s=>{
+      progAbertas=s.docs.map(d=>({id:d.id,...d.data()}));
+      window._progsAbertas=progAbertas;
+      pintaProgs(); pintaInversao(null);
+    },e=>console.error(e));
+  escutaInversoes();
 }
 
 function realizadoDe(tipo){

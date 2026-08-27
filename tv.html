@@ -47,8 +47,12 @@
            color:var(--muted);padding:0 2px;flex:none}
   .bloco{background:var(--card);border:1px solid var(--border);border-radius:12px;
          padding:13px 15px;display:flex;flex-direction:column;min-height:0}
-  .bloco.g1{flex:1;min-height:0}
-  .bloco.g14{flex:1.4;min-height:0}
+  .bloco.f30{flex:30 1 0;min-height:0}
+  .bloco.f32{flex:32 1 0;min-height:0}
+  .bloco.f38{flex:38 1 0;min-height:0}
+  .bloco > div{min-height:0;overflow:auto}
+  .bloco > div::-webkit-scrollbar{width:5px}
+  .bloco > div::-webkit-scrollbar-thumb{background:#C9D6E3;border-radius:3px}
   .bloco h2{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;
             color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex:none}
   .bloco h2::before{content:'';width:3px;height:12px;border-radius:2px;background:var(--teal)}
@@ -85,13 +89,13 @@
   .vg.ok{background:var(--blue)}
 
   /* histograma de estoque */
-  .hist{display:flex;align-items:flex-end;gap:4px;height:52px;margin-top:11px;flex:none}
+  .hist{display:flex;align-items:flex-end;gap:4px;height:clamp(34px,6vh,64px);margin-top:11px;flex:none}
   .hc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
   .hc i{width:100%;max-width:24px;background:var(--teal);border-radius:3px 3px 0 0;min-height:3px}
   .hc span{font-size:7.5px;font-weight:700;color:var(--muted);margin-top:3px}
 
   /* ocupação por vão */
-  .vaos{display:flex;gap:2px;align-items:flex-end;height:44px;margin-top:9px}
+  .vaos{display:flex;gap:2px;align-items:flex-end;height:clamp(28px,5vh,54px);margin-top:9px}
   .vv{flex:1;background:#E4EBF2;border-radius:3px 3px 0 0;position:relative;min-width:5px;height:100%}
   .vv i{position:absolute;bottom:0;left:0;width:100%;background:var(--teal);border-radius:3px 3px 0 0}
   .vv i.cheio{background:var(--orange)}
@@ -145,14 +149,14 @@
           font-size:9.5px;font-weight:800;margin-bottom:8px;display:inline-block}
 
   /* porões */
-  .poroes{display:flex;align-items:flex-end;gap:8px;height:clamp(74px,12vh,120px);flex:none;margin-top:2px}
+  .poroes{display:flex;align-items:flex-end;gap:8px;height:clamp(56px,9.5vh,120px);flex:none;margin-top:2px}
   .po{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
   .po .pc{font-size:9.5px;font-weight:800;margin-bottom:3px;font-variant-numeric:tabular-nums}
   .po .cx{width:100%;max-width:42px;background:#E4EBF2;border-radius:4px 4px 0 0;
           display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
   .po .cx i{display:block;width:100%;background:var(--blue);transition:height .6s}
   .po .cx i.ok{background:var(--green)}
-  .po .nm{font-size:9px;font-weight:800;color:var(--muted);margin-top:4px}
+  .po .nm{font-size:9px;font-weight:800;color:var(--muted);margin-top:4px;white-space:nowrap}
 
   /* grade hora a hora */
   table.grade{width:100%;border-collapse:collapse;font-size:11px}
@@ -201,17 +205,17 @@
   <div class="col">
     <div class="col-rot">Retaguarda</div>
 
-    <div class="bloco b-est">
+    <div class="bloco b-est f30">
       <h2>Estoque do armazém<span class="dir" id="est-dir"></span></h2>
       <div id="est-corpo"></div>
     </div>
 
-    <div class="bloco b-desc">
+    <div class="bloco b-desc f32">
       <h2>Descarga<span class="dir" id="desc-dir"></span></h2>
       <div id="desc-corpo"></div>
     </div>
 
-    <div class="bloco b-oper g1">
+    <div class="bloco b-oper f38">
       <h2>Operação T32 · frentes de trabalho</h2>
       <div class="cresce" id="oper-corpo"></div>
     </div>
@@ -222,17 +226,17 @@
   <div class="col">
     <div class="col-rot">Embarque</div>
 
-    <div class="bloco b-emb">
+    <div class="bloco b-emb f32">
       <h2>Navio em operação</h2>
       <div id="emb-topo"></div>
     </div>
 
-    <div class="bloco b-emb g14">
+    <div class="bloco b-emb f38">
       <h2>Hora a hora por terno<span class="dir" id="emb-grade-dir"></span></h2>
       <div class="cresce" id="emb-grade"></div>
     </div>
 
-    <div class="bloco b-emb g1">
+    <div class="bloco b-emb f30">
       <h2>Frentes no embarque</h2>
       <div class="cresce" id="emb-frentes"></div>
     </div>
@@ -255,6 +259,9 @@ const FB={apiKey:"AIzaSyAOn25k4FcTnc2SuCZz5OCFMJUaGaVMss0",authDomain:"pcel-t32a
 
 const PER=['07\u00d713','13\u00d719','19\u00d701','01\u00d707'];
 const TON_ATADO=2, TON_VAGAO=96, ATADOS_VAGAO=48, RAMAL_LINHAS=4, RAMAL_POR_LINHA=10;
+const RAMAL_CAP=RAMAL_LINHAS*RAMAL_POR_LINHA;
+// manobra ainda em aberto: pedida e não concluída
+const invAberta=()=>dados.inversoes.find(x=>x.solicitadoEm&&!x.concluidoEm)||null;
 const fmt=n=>(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
 const fmt1=n=>(n||0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
 const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -275,7 +282,7 @@ function curPer(){const h=new Date().getHours();return h>=7&&h<13?0:h>=13&&h<19?
 function turnoAgora(){const e=DADOS.escala[hoje()];return e?e[curPer()]:'\u2014';}
 
 let db=null, unsubHoras=null;
-let dados={regs:[],navio:null,naviosAtivos:[],horas:[],progs:[],estoque:[],contagem:null};
+let dados={regs:[],navio:null,naviosAtivos:[],horas:[],progs:[],estoque:[],contagem:null,inversoes:[]};
 let ultOk=null;
 
 // ── relógio, turno e conexão ──
@@ -290,6 +297,14 @@ setInterval(()=>{
     c.innerHTML=`<b>\u25cf</b> ${off?'sem atualizar':'conectado'}<br><span>h\u00e1 ${s<60?s+'s':Math.round(s/60)+'min'}</span>`;
   }
 },1000);
+
+// redesenha sozinha, mesmo sem lançamento novo, e força na virada do período
+let ultPer=curPer(), ultDia=hoje();
+setInterval(()=>{
+  const p=curPer(), d=hoje();
+  if(p!==ultPer||d!==ultDia){ultPer=p;ultDia=d;}
+  if(db)pintar();
+},30000);
 
 // mantém a TV acesa
 (async()=>{try{if('wakeLock' in navigator)await navigator.wakeLock.request('screen');}catch(e){}})();
@@ -332,6 +347,8 @@ function escutar(){
   db.collection('estoque_horas').where('data','==',d)
     .onSnapshot(s=>{dados.estoque=s.docs.map(x=>x.data())
       .sort((a,b)=>String(a.hora).localeCompare(String(b.hora)));ok();},err);
+  db.collection('inversoes').where('data','in',[ontem(),d])
+    .onSnapshot(s=>{dados.inversoes=s.docs.map(x=>x.data());ok();},err);
   db.collection('contagens_armazem').orderBy('data','desc').limit(1)
     .onSnapshot(s=>{dados.contagem=s.empty?null:s.docs[0].data();ok();},err);
 }
@@ -370,9 +387,13 @@ function estoque(){
   </div>`;
 
   if(e.length){
-    const max=Math.max(...e.map(x=>x.total||0),1);
+    const vals=e.map(x=>x.total||0);
+    const max=Math.max(...vals), min=Math.min(...vals);
+    const amp=Math.max(1,max-min);                 // escala entre o mínimo e o máximo do dia
+    h+=`<div style="font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+         color:var(--muted);margin-top:12px;">Estoque hora a hora \u00b7 ${fmt(min)} a ${fmt(max)} atados</div>`;
     h+=`<div class="hist">${e.map(x=>`<div class="hc" title="${x.hora}: ${fmt(x.total)} atados">
-      <i style="height:${Math.max(4,(x.total||0)/max*100)}%"></i>
+      <i style="height:${12+((x.total||0)-min)/amp*88}%"></i>
       <span>${String(x.hora).slice(0,2)}</span></div>`).join('')}</div>`;
   }
 
@@ -399,10 +420,6 @@ function estoque(){
         return `<div class="vv" title="${v}: ${fmt(q)} de ${fmt(cap)} atados">
           <i class="${pc>=85?'cheio':''}" style="height:${pc}%"></i></div>`;}).join('')}</div>
         <div class="vzr">${VAOS_ORDEM.map(v=>`<span>${v.slice(1)}</span>`).join('')}</div>`;
-    }
-    if(c.divergencia!=null&&Math.abs(c.divergencia)>0){
-      h+=`<div style="font-size:10px;font-weight:700;margin-top:8px;color:${Math.abs(c.divergencia)>200?'var(--danger)':'var(--muted)'};">
-        Diverg\u00eancia da contagem: ${fmt(Math.abs(c.divergencia))} atados</div>`;
     }
   }
   box.innerHTML=h;
@@ -454,13 +471,29 @@ function descarga(){
       <div class="barra"><i class="${pc>=100?'ok':''}" style="width:${pc}%;background:var(--danger)"></i></div></div>`;
   });
 
-  // ramal: o que ainda falta descarregar, enchendo L1 antes da L2
+  // ramal por etapa: primeiro lote, depois o que veio na inversão
   if(pf.length){
-    const prog=pf.reduce((s,p)=>s+(p.vagoesProg||0),0);
-    const falta=Math.max(0,prog-vg);
+    const p0=pf[0];
+    const lote1=p0.vagoesLote1||Math.min(RAMAL_CAP,p0.vagoesProg||0);
+    const lote2=p0.vagoesInversao||Math.max(0,(p0.vagoesProg||0)-lote1);
+    const inv=invAberta();
+    const posInv=vg>=lote1&&!inv;                  // já descarregou o primeiro lote e a manobra fechou
+    const etapa=posInv?'ap\u00f3s invers\u00e3o':'primeiro lote';
+    const alvo=posInv?lote2:lote1;
+    const feito=posInv?Math.max(0,vg-lote1):Math.min(vg,lote1);
+    const falta=Math.max(0,alvo-feito);
+
     h+=`<div style="font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
-         color:var(--muted);margin-top:11px;">Ramal \u00b7 ${fmt(falta)} vag\u00f5es a descarregar</div>`;
-    let resta=Math.min(RAMAL_LINHAS*RAMAL_POR_LINHA,falta);
+         color:var(--muted);margin-top:11px;">Ramal \u00b7 ${etapa} \u00b7 ${fmt(feito)} de ${fmt(alvo)} \u00b7 faltam ${fmt(falta)}</div>`;
+
+    if(inv){
+      const min=Math.round((Date.now()-new Date(inv.solicitadoEm).getTime())/60000);
+      h+=`<div style="background:rgba(232,132,26,.12);color:#B8630A;border-radius:6px;padding:6px 10px;
+           font-size:11px;font-weight:800;margin-top:7px;">
+           Invers\u00e3o solicitada \u00b7 aguardando h\u00e1 ${min} min</div>`;
+    }
+
+    let resta=Math.min(RAMAL_CAP,falta);
     const porLinha=[];
     for(let i=0;i<RAMAL_LINHAS;i++){const n=Math.min(RAMAL_POR_LINHA,Math.max(0,resta));porLinha.push(n);resta-=n;}
     h+=`<div class="ramal">${[3,2,1,0].map(i=>
@@ -532,6 +565,9 @@ function tonDoRegistro(r){
 function rodape(){
   const lista=frentesDoPeriodo();
   const doTurno=regsDoTurno();
+  const inicioTurno=[7,7,19,19][curPer()];
+  const hAgora=new Date().getHours();
+  const decorrido=(((hAgora-inicioTurno)%24)+24)%24;
   const tRetag=doTurno.filter(r=>r.atividade!=='embarque').reduce((s,r)=>s+tonDoRegistro(r),0);
   const tEmb=dados.horas.filter(x=>naJanela(x.data,x.periodoIdx)).reduce((s,x)=>s+(x.somaTon||0),0);
   const vivas=lista.filter(r=>r.frente&&r.frente.ativa).length;
@@ -549,7 +585,7 @@ function rodape(){
     <div class="lado">
       <div class="cap">Retaguarda \u00b7 turno 12h</div>
       <div class="val">${fmt(tRetag)}</div>
-      <div class="un">t lan\u00e7adas</div>
+      <div class="un">${tRetag?'t lan\u00e7adas':`turno iniciado \u00e0s ${inicioTurno}h \u00b7 sem lan\u00e7amento`}</div>
     </div>
     <div class="meio">
       <div><b>${turnoAgora()} \u00b7 ${PER[curPer()]}</b>per\u00edodo em curso</div>
@@ -561,7 +597,7 @@ function rodape(){
     <div class="lado dir">
       <div class="cap">Embarque \u00b7 turno 12h</div>
       <div class="val">${fmt(tEmb)}</div>
-      <div class="un">t embarcadas</div>
+      <div class="un">${tEmb?'t embarcadas':`turno iniciado \u00e0s ${inicioTurno}h \u00b7 sem lan\u00e7amento`}</div>
     </div>`;
 }
 
@@ -579,6 +615,8 @@ function embTopo(){
   const doDia=dados.horas.filter(x=>x.data===hoje())
     .sort((a,b)=>String(a.hora).localeCompare(String(b.hora)));
   const ultima=doDia[doDia.length-1];
+  // média bruta: tudo embarcado dividido pelas horas lançadas, paralisação incluída
+  const medBruta=dados.horas.length?carregado/dados.horas.length:0;
 
   const porPorao={};
   dados.horas.forEach(x=>(x.ternos||[]).forEach(t=>{
@@ -604,7 +642,8 @@ function embTopo(){
         <div class="nums">
           <div class="nn b"><div class="v">${fmt(carregado)}</div><div class="l">t embarcadas</div></div>
           <div class="nn o"><div class="v">${fmt(saldo)}</div><div class="l">t de saldo</div></div>
-          <div class="nn t"><div class="v">${ultima?fmt(ultima.somaTon):'\u2014'}</div><div class="l">t/h \u00b7 ${ultima?ultima.hora:'\u2014'}</div></div>
+          <div class="nn t"><div class="v">${ultima?fmt(ultima.somaTon):'\u2014'}</div><div class="l">\u00faltima hora \u00b7 ${ultima?ultima.hora:'\u2014'}</div></div>
+          <div class="nn g"><div class="v">${fmt(medBruta)}</div><div class="l">m\u00e9dia bruta t/h</div></div>
         </div>
       </div>
     </div>
@@ -613,7 +652,7 @@ function embTopo(){
       return `<div class="po" title="Por\u00e3o ${p}: ${fmt(feito)} de ${fmt(prev)} t">
         <div class="pc" style="color:${pcp>=99?'#6E9A22':'var(--dark)'}">${pcp.toFixed(0)}%</div>
         <div class="cx" style="height:${Math.max(10,alt)}%"><i class="${pcp>=99?'ok':''}" style="height:${pcp}%"></i></div>
-        <div class="nm">P${p}</div></div>`;}).join('')}</div>`;
+        <div class="nm">Por\u00e3o ${p}</div></div>`;}).join('')}</div>`;
 }
 
 // ══════════ EMBARQUE — GRADE HORA A HORA ══════════
