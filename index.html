@@ -250,6 +250,7 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
 .mini-stat{background:#fff;border-radius:9px;padding:13px 14px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:3px solid var(--blue);}
 .mini-stat.t{border-left-color:var(--teal);}
 .mini-stat.g{border-left-color:var(--green);}
+.mini-stat.o{border-left-color:var(--orange);}
 .mini-stat .v{font-size:20px;font-weight:800;color:var(--dark);}
 .mini-stat .l{font-size:10px;font-weight:700;color:#7a8fa6;text-transform:uppercase;margin-top:2px;}
 /* ACESSO NEGADO */
@@ -409,9 +410,15 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
       <div class="atv-sec" id="as-embarque"><div class="atv-hdr" onclick="selAtv('embarque')"><input type="radio" name="atv" value="embarque" id="r-embarque"><span>⚓ Embarque</span></div>
         <div class="atv-body"><div class="fg" style="margin-top:6px;">
           <div class="fgrp"><label>Terno *</label><select id="emb-terno"><option value="">Selecione</option><option>Terno 1</option><option>Terno 2</option></select></div>
-          <div class="fgrp"><label>Porta *</label><select id="emb-porta"><option value="">Selecione</option><option>Porta 1</option><option>Porta 2</option><option>Porta 3</option><option>Porta 4</option><option>Porta 5</option><option>Porta 6</option></select></div>
-          <div class="fgrp"><label>Toneladas embarcadas na hora fechada *</label><input type="text" inputmode="decimal" id="emb-ton" placeholder="Ex: 1240,5" oninput="calcTonH()"><small id="emb-tonh" style="display:block;margin-top:5px;font-size:11px;font-weight:700;color:var(--teal);"></small></div>
-        </div></div>
+          <div class="fgrp"><label>Giro · entra na *</label><select id="emb-porta"><option value="">Selecione</option><option>Porta 1</option><option>Porta 2</option><option>Porta 3</option><option>Porta 4</option><option>Porta 5</option><option>Porta 6</option></select></div>
+          <div class="fgrp"><label>Giro · sai na *</label><select id="emb-porta-sai"><option value="">Selecione</option><option>Porta 1</option><option>Porta 2</option><option>Porta 3</option><option>Porta 4</option><option>Porta 5</option><option>Porta 6</option></select></div>
+        </div>
+        <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin:14px 0 7px;text-transform:uppercase;letter-spacing:.4px;">
+          Carretas Unitralog do terno</p>
+        <p style="font-size:10.5px;color:#7a8fa6;margin-bottom:9px;line-height:1.5;">
+          As três que giram do costado ao armazém. Cadastre uma vez; se trocar, use o botão.</p>
+        <div id="emb-carretas"></div>
+        </div>
       </div>
       <div class="atv-sec" id="as-recebimento"><div class="atv-hdr" onclick="selAtv('recebimento')"><input type="radio" name="atv" value="recebimento" id="r-recebimento"><span>🚛 Recebimento</span></div>
         <div class="atv-body">
@@ -783,19 +790,6 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
         <div class="fgrp"><label>Período *</label><select id="eh-periodo"><option>07×13</option><option>13×19</option><option>19×01</option><option>01×07</option></select></div>
         <div class="fgrp"><label>Hora *</label><select id="eh-hora"></select></div>
         <div class="fgrp"><label>Produto</label><input type="text" id="eh-produto" placeholder="Atados de Celulose"></div>
-      </div>
-
-      <div id="eh-periodo-box" style="background:#F6F9FC;border:1px solid var(--border);
-           border-radius:10px;padding:12px 13px;margin-top:14px;">
-        <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin:0 0 3px;text-transform:uppercase;letter-spacing:.4px;">
-          Dados do período</p>
-        <p style="font-size:10.5px;color:#7a8fa6;margin-bottom:10px;line-height:1.5;">
-          Lançados uma vez por período. Todas as horas seguintes herdam.</p>
-        <div id="eh-periodo-campos"></div>
-        <div class="flex-end" style="margin-top:10px;">
-          <button class="btn btn-sec btn-sm" onclick="salvarPeriodoEmb()">Salvar dados do período</button>
-        </div>
-        <div id="eh-per-err" class="err"></div>
       </div>
 
       <div id="eh-ternos"></div>
@@ -1243,6 +1237,7 @@ function selAtv(id){
   document.getElementById('r-'+id).checked=true;
   document.querySelectorAll('.inv').forEach(el=>el.classList.remove('inv'));
   if(id==='avarias')montaGradeAvaria();
+  if(id==='embarque')montaCarretasEmb();
   window._atvSel=id;
   if(!_ctx.carregado){_ctx.carregado=true;carregaContexto();}
   avisoSimultaneo();
@@ -1567,7 +1562,11 @@ async function salvarRegistro(){
   const atv=document.querySelector('input[name="atv"]:checked').value;
   let detalhe='';
   switch(atv){
-    case'embarque':detalhe=[document.getElementById('emb-terno').value,document.getElementById('emb-porta').value].filter(Boolean).join(' / ');break;
+    case'embarque':{
+      const tn=document.getElementById('emb-terno').value;
+      const pe=document.getElementById('emb-porta').value, ps=document.getElementById('emb-porta-sai').value;
+      detalhe=[tn,(pe&&ps)?`giro: entra na ${pe}, sai na ${ps}`:pe].filter(Boolean).join(' · ');
+      break;}
     case'recebimento':{const tp=document.querySelector('input[name="receb-tipo"]:checked')?.value||'';
       const sk=document.getElementById('receb-sku').value.trim().toUpperCase();
       detalhe=tp+(tp==='Rodo'&&sk?' · '+sk:'');break;}
@@ -1603,7 +1602,12 @@ async function salvarRegistro(){
 
   let producao={};
   switch(atv){
-    case'embarque':{const tn=nDec('emb-ton');producao={unidade:'ton',valor:tn,tonHora:tn,horasFrente:horas?+horas.toFixed(2):null};break;}
+    case'embarque':{
+      producao={unidade:'—',valor:null,
+        giro:{entra:document.getElementById('emb-porta').value,
+              sai:document.getElementById('emb-porta-sai').value},
+        carretas:lerCarretasEmb()};
+      break;}
     case'recebimento':{
       const tipo=document.querySelector('input[name="receb-tipo"]:checked')?.value;
       if(tipo==='Ferro'){
@@ -1633,7 +1637,7 @@ async function salvarRegistro(){
     case'outros':producao={unidade:'—',valor:null,descricao:document.getElementById('outros-desc').value.trim()};break;
   }
 
-  const rec={id:'reg_'+Date.now(),data:t,turno:tu,periodo:PER_LABELS[pi],periodoIdx:pi,matricula:currentUser.mat,colaborador:currentUser.nome,fte:!!currentUser.fte,turnoOrigem:currentUser.turnoOrigem||currentUser.turno,atividade:atv,detalhe,
+  const rec={data:t,turno:tu,periodo:PER_LABELS[pi],periodoIdx:pi,matricula:currentUser.mat,colaborador:currentUser.nome,fte:!!currentUser.fte,turnoOrigem:currentUser.turnoOrigem||currentUser.turno,atividade:atv,detalhe,
     efetivo,frente:{inicio:frInicio,fim:frFim,ativa:!frFim},producao,
     recursos:{
       coletores:{qtd:parseInt(document.getElementById('col-qtd').value||0),nums:document.getElementById('col-nums').value,obs:document.getElementById('col-obs').value},
@@ -1689,13 +1693,27 @@ let sucUnsub=null;
 
 function pintaSucesso(docs){
   pintaFrenteAberta(docs);
+  if(!_ctx.carregado){_ctx.carregado=true;carregaContexto();}
   const colT=docs.reduce((s,d)=>s+(d.recursos?.coletores?.qtd||0),0);
   const radT=docs.reduce((s,d)=>s+(d.recursos?.radios?.usados?.length||0),0);
   const tonT=docs.reduce((s,d)=>s+(d.producao?.unidade==='ton'?(d.producao.valor||0):0),0);
   const efeT=docs.reduce((s,d)=>s+(d.efetivo?.total||0),0);
+  // carretas feitas contra o programado — um card por operação, só quando há programação
+  const carDe=tp=>docs.reduce((s,d)=>{
+    const p=d.producao; if(!p)return s;
+    if(tp==='rodo'  && d.atividade==='recebimento' && p.tipo==='Rodo')return s+(p.carretas||0);
+    if(tp==='avaria'&& d.atividade==='avarias')return s+(p.carretas||0);
+    return s;},0);
+  const cardCar=(tp,rot)=>{
+    const prog=(tp==='rodo'?_ctx.progRodo:_ctx.progAvaria)?.carretasProg||0;
+    if(!prog)return '';
+    return `<div class="mini-stat ${tp==='rodo'?'t':'o'}">
+      <div class="v">${carDe(tp)}/${prog}</div><div class="l">${rot}</div></div>`;
+  };
   document.getElementById('suc-stats').innerHTML=`
     <div class="mini-stat"><div class="v">${docs.length}</div><div class="l">Registros</div></div>
     <div class="mini-stat t"><div class="v">${tonT?tonT.toFixed(0):'—'}</div><div class="l">Toneladas</div></div>
+    ${cardCar('rodo','Carretas rodo')}${cardCar('avaria','Carretas avaria')}
     <div class="mini-stat g"><div class="v">${efeT||'—'}</div><div class="l">Efetivo</div></div>
     <div class="mini-stat"><div class="v">${colT}/${radT}</div><div class="l">Colet./Rádios</div></div>`;
   const tb=document.getElementById('suc-tbody');
@@ -1704,7 +1722,11 @@ function pintaSucesso(docs){
     let prod='';
     const p=d.producao;
     if(p){
-      if(p.unidade==='ton'&&p.valor!=null)prod=` · <b>${p.valor} t</b>`+(p.tonHora?` (${p.tonHora} t/h)`:'');
+      if(p.giro||p.carretas){
+        const pl=(p.carretas||[]).filter(c=>c.placa).map(c=>c.placa+(c.motorista?' · '+c.motorista:''));
+        prod=(pl.length?`<br><span style="font-size:11px;color:#7a8fa6;font-weight:600;">${pl.join(' | ')}</span>`:'');
+      }
+      else if(p.unidade==='ton'&&p.valor!=null)prod=` · <b>${p.valor} t</b>`+(p.tonHora?` (${p.tonHora} t/h)`:'');
       else if(p.unidade==='vaos')prod=` · <b>${p.valor} vãos</b>`;
       else if(p.unidade==='maquinas')prod=` · <b>${p.valor} máq.</b>`+(p.pitstops?` · PS ${p.pitstops.filter(x=>x!=null).join('% / ')}%`:'');
     }
@@ -1733,7 +1755,7 @@ async function showSucesso(savedRec){
   try{
     sucUnsub=db.collection('registros').where('data','==',t).where('periodoIdx','==',pi)
       .onSnapshot(
-        snap=>pintaSucesso(snap.docs.map(d=>({id:d.id,...d.data()}))),
+        snap=>pintaSucesso(snap.docs.map(d=>({...d.data(),id:d.id}))),
         ()=>pintaSucesso(savedRec?[savedRec]:[])
       );
   }catch(e){pintaSucesso(savedRec?[savedRec]:[]);}
@@ -1859,7 +1881,7 @@ async function loadEmbh(){
   if(db){
     try{
       const snap=await db.collection('navios').where('ativo','==',true).limit(1).get();
-      if(!snap.empty){const d=snap.docs[0]; navioAtual={id:d.id,...d.data()};}
+      if(!snap.empty){const d=snap.docs[0]; navioAtual={...d.data(),id:d.id};}
     }catch(e){console.error(e);}
   }
   const semNav=document.getElementById('embh-sem-navio');
@@ -1882,7 +1904,7 @@ async function loadEmbh(){
   if(!dt.dataset.init){dt.dataset.init='1';dt.onchange=repintaGrade;}
   document.getElementById('eh-produto').value=navioAtual.produto||'';
   parsForm=[]; montaPars();
-  montaHoras(); montaTernos(); carregaPeriodoEmb();
+  montaHoras(); montaTernos();
   escutaHoras();
 }
 
@@ -1916,135 +1938,6 @@ function montaTernos(){
       <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Carretas</label><input type="text" inputmode="decimal" id="eh-t${i}-cat" placeholder="0" oninput="calcHora()"></div>
     </div>`).join('');
   calcHora();
-}
-
-// ══════════════════════════════════════════════════════════
-//  DADOS DO PERÍODO  —  guincheiro, giro, carretas e motoristas
-// ══════════════════════════════════════════════════════════
-let perEmb=null;        // documento do período corrente
-const CARRETAS_TERNO=3;
-
-function chavePeriodo(){
-  return `${navioAtual?.id||'x'}_${document.getElementById('eh-data').value}_${document.getElementById('eh-periodo').value}`;
-}
-
-function montaPeriodoEmb(){
-  const n=navioAtual?.ternos||2;
-  const portas=[...Array(6)].map((_,i)=>i+1);
-  const box=document.getElementById('eh-periodo-campos');
-  if(!box)return;
-  const d=perEmb||{ternos:[]};
-  box.innerHTML=[...Array(n)].map((_,i)=>{
-    const t=(d.ternos||[])[i]||{};
-    const cs=t.carretas||[];
-    const opt=(v,sel)=>`<option value="${v}" ${String(sel)===String(v)?'selected':''}>Porta ${v}</option>`;
-    return `
-    <p style="font-size:10px;font-weight:800;color:var(--blue);margin:${i?'14px':'0'} 0 7px;
-       text-transform:uppercase;letter-spacing:.4px;">${i+1}º Terno</p>
-    <div class="fgrp" style="margin:0 0 8px;"><label style="font-size:9px;">Guincheiro</label>
-      <input type="text" id="pe-t${i}-gui" maxlength="40" value="${(t.guincheiro||'').replace(/"/g,'&quot;')}"
-        placeholder="Nome do guincheiro"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
-      <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Giro · entra na</label>
-        <select id="pe-t${i}-ent"><option value="">—</option>${portas.map(v=>opt(v,t.portaEntra)).join('')}</select></div>
-      <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Giro · sai na</label>
-        <select id="pe-t${i}-sai"><option value="">—</option>${portas.map(v=>opt(v,t.portaSai)).join('')}</select></div>
-    </div>
-    <p style="font-size:9px;font-weight:700;color:#7a8fa6;margin:9px 0 5px;text-transform:uppercase;">Carretas Unitralog</p>
-    ${[...Array(CARRETAS_TERNO)].map((_,k)=>{
-      const c=cs[k]||{};
-      const trocada=!!c.trocadoEm;
-      return `<div style="display:grid;grid-template-columns:1fr 1fr 34px;gap:6px;margin-bottom:6px;align-items:end;">
-        <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Placa ${k+1}</label>
-          <input type="text" id="pe-t${i}-pl${k}" maxlength="8" style="text-transform:uppercase;"
-            value="${(c.placa||'').replace(/"/g,'&quot;')}" placeholder="ABC1D23"></div>
-        <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Motorista ${k+1}</label>
-          <input type="text" id="pe-t${i}-mt${k}" maxlength="40"
-            value="${(c.motorista||'').replace(/"/g,'&quot;')}" placeholder="Nome"></div>
-        <button class="btn btn-sec btn-sm" style="padding:6px 0;" title="Trocar carreta e motorista"
-          onclick="trocarCarreta(${i},${k})">🔁</button>
-      </div>
-      ${trocada?`<p style="font-size:9.5px;color:var(--orange);font-weight:700;margin:-3px 0 8px;">
-        Trocada às ${String(c.trocadoEm).slice(11,16)} \u00b7 antes: ${c.placaAnterior||'—'} / ${c.motoristaAnterior||'—'}</p>`:''}`;
-    }).join('')}`;
-  }).join('');
-}
-
-function lerPeriodoEmb(){
-  const n=navioAtual?.ternos||2, arr=[];
-  for(let i=0;i<n;i++){
-    const ant=((perEmb?.ternos)||[])[i]||{};
-    const cs=[];
-    for(let k=0;k<CARRETAS_TERNO;k++){
-      const c=(ant.carretas||[])[k]||{};
-      cs.push({
-        placa:(document.getElementById(`pe-t${i}-pl${k}`)?.value||'').trim().toUpperCase(),
-        motorista:(document.getElementById(`pe-t${i}-mt${k}`)?.value||'').trim(),
-        trocadoEm:c.trocadoEm||null, placaAnterior:c.placaAnterior||null,
-        motoristaAnterior:c.motoristaAnterior||null
-      });
-    }
-    arr.push({
-      terno:i+1,
-      guincheiro:(document.getElementById(`pe-t${i}-gui`)?.value||'').trim(),
-      portaEntra:document.getElementById(`pe-t${i}-ent`)?.value||'',
-      portaSai:document.getElementById(`pe-t${i}-sai`)?.value||'',
-      carretas:cs
-    });
-  }
-  return arr;
-}
-
-async function salvarPeriodoEmb(){
-  const err=document.getElementById('eh-per-err');
-  err.style.display='none';
-  if(!navioAtual){err.textContent='Cadastre o navio primeiro.';err.style.display='block';return;}
-  const rec={
-    navioId:navioAtual.id, navio:navioAtual.nome,
-    data:document.getElementById('eh-data').value,
-    periodo:document.getElementById('eh-periodo').value,
-    periodoIdx:PER_LABELS.indexOf(document.getElementById('eh-periodo').value),
-    ternos:lerPeriodoEmb(),
-    atualizadoPor:currentLider?.nome||currentUser?.nome||'',
-    atualizadoEm:new Date().toISOString()
-  };
-  try{
-    await db.collection('periodo_embarque').doc(chavePeriodo()).set(rec,{merge:true});
-    perEmb={id:chavePeriodo(),...rec};
-    toast('Dados do período salvos.','success');
-    montaPeriodoEmb();
-  }catch(e){err.textContent='Erro: '+e.message;err.style.display='block';}
-}
-
-// troca de carreta guarda quem saiu e a hora
-async function trocarCarreta(i,k){
-  const placa=document.getElementById(`pe-t${i}-pl${k}`);
-  const mot=document.getElementById(`pe-t${i}-mt${k}`);
-  if(!placa.value.trim()){toast('Preencha a carreta atual antes de trocar.','danger');return;}
-  const nova=prompt(`Nova placa (saindo: ${placa.value.trim().toUpperCase()})`);
-  if(nova===null)return;
-  const novoMot=prompt(`Novo motorista (saindo: ${mot.value.trim()||'—'})`);
-  if(novoMot===null)return;
-  perEmb=perEmb||{ternos:lerPeriodoEmb()};
-  perEmb.ternos=perEmb.ternos||lerPeriodoEmb();
-  const t=perEmb.ternos[i]||(perEmb.ternos[i]={terno:i+1,carretas:[]});
-  t.carretas=t.carretas||[];
-  t.carretas[k]={
-    placa:nova.trim().toUpperCase(), motorista:novoMot.trim(),
-    placaAnterior:placa.value.trim().toUpperCase(), motoristaAnterior:mot.value.trim(),
-    trocadoEm:new Date().toISOString()
-  };
-  montaPeriodoEmb();
-  await salvarPeriodoEmb();
-}
-
-async function carregaPeriodoEmb(){
-  if(!db||!navioAtual){montaPeriodoEmb();return;}
-  try{
-    const d=await db.collection('periodo_embarque').doc(chavePeriodo()).get();
-    perEmb=d.exists?{id:d.id,...d.data()}:null;
-  }catch(e){perEmb=null;}
-  montaPeriodoEmb();
 }
 
 function ternosDoForm(){
@@ -2225,7 +2118,6 @@ async function salvarHora(){
     somaAtados:+ternos.reduce((s,t)=>s+t.atados,0).toFixed(2),
     somaCarretas:+ternos.reduce((s,t)=>s+t.carretas,0).toFixed(2),
     paralisacoes: pars,
-    periodoEmbId: chavePeriodo(),
     lancadoPor:currentLider?.nome||'', matriculaLancou:currentLider?.mat||null,
     funcao:currentLider?.funcao||'',
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -2257,7 +2149,7 @@ function escutaHoras(){
     embhUnsub=db.collection('embarque_horas')
       .where('navioId','==',navioAtual.id)
       .onSnapshot(snap=>{
-        const todas=snap.docs.map(d=>({id:d.id,...d.data()}));
+        const todas=snap.docs.map(d=>({...d.data(),id:d.id}));
         window._embhTodas=todas;
         pintaSaldoNavio(todas);
         repintaGrade();
@@ -2591,8 +2483,8 @@ async function cargaDemo(){
         // frentes do período: 2 ternos do navio + abastecimento + ferro ou rodo
         const ferro=d%3===0;
         const frentes=[
-          {atv:'embarque',  det:'Terno 1 · Porta '+rnd(1,6)},
-          {atv:'embarque',  det:'Terno 2 · Porta '+rnd(1,6)},
+          {atv:'embarque',  det:'Terno 1 · giro: entra na Porta 2, sai na Porta 3'},
+          {atv:'embarque',  det:'Terno 2 · giro: entra na Porta 4, sai na Porta 5'},
           {atv:'abastecimento', det:''},
           {atv:'recebimento', det:ferro?'Ferro':'Rodo'}
         ];
@@ -2608,7 +2500,14 @@ async function cargaDemo(){
 
           let producao={}, detalhe=f.det;
           if(f.atv==='embarque'){
-            const t=rnd(140,320); producao={unidade:'ton',valor:t,tonHora:t};
+            // a tonelada do embarque vem do hora a hora do navio, não daqui
+            const tn=f.det.includes('1')?1:2;
+            const pl=['RIO2A45','RIO7B12','RIO3C88','RIO5D21','RIO9E07','RIO4F63'];
+            const mo=['CLEBER SOUZA','WAGNER LIMA','JAILSON COSTA','MARCOS PAULO','EDER SANTOS','IVAN BRAGA'];
+            producao={unidade:'—',valor:null,
+              giro:{entra:`Porta ${tn===1?2:4}`,sai:`Porta ${tn===1?3:5}`},
+              carretas:[0,1,2].map(k=>({placa:pl[(tn-1)*3+k],motorista:mo[(tn-1)*3+k],
+                trocadoEm:null,placaAnterior:null,motoristaAnterior:null}))};
           }else if(f.atv==='recebimento'){
             if(f.det==='Ferro'){const v=rnd(7,12);
               producao={tipo:'Ferro',unidade:'ton',valor:v*96,qtd:v,unidadeQtd:'vagões',fator:96,horas:[]};}
@@ -2679,8 +2578,8 @@ async function cargaDemo(){
           navioId:navRef.id, navio:'GREEN VITORIA', berco:32,
           data:dataR, periodo, periodoIdx:pIdx, hora, produto:'Atados de Celulose',
           ternos:[
-            {terno:1,porao:pa||p1,atados:t1[0],ton:t1[1],carretas:t1[2]},
-            {terno:2,porao:pb||p2,atados:t2[0],ton:t2[1],carretas:t2[2]}
+            {terno:1,porao:pa||p1,atados:t1[0],ton:t1[1],carretas:t1[2],guincheiro:'ROBSON MOTA'},
+            {terno:2,porao:pb||p2,atados:t2[0],ton:t2[1],carretas:t2[2],guincheiro:'JEAN CARLOS'}
           ],
           somaTon:t1[1]+t2[1], somaAtados:t1[0]+t2[0], somaCarretas:t1[2]+t2[2],
           paralisacoes: par?(()=>{
@@ -2697,23 +2596,6 @@ async function cargaDemo(){
 
     // ── 2c. Programações, estoque por hora e contagem do armazém ──
     // dados de período do embarque, para a TV mostrar giro e guincheiro
-    const placas=['RIO2A45','RIO7B12','RIO3C88','RIO5D21','RIO9E07','RIO4F63'];
-    const mots=['CLEBER SOUZA','WAGNER LIMA','JAILSON COSTA','MARCOS PAULO','EDER SANTOS','IVAN BRAGA'];
-    [0,1,2,3].forEach(pi=>{
-      if(pi!==curPeriodo()&&pi!==(curPeriodo()+3)%4)return;
-      lote.push({col:'periodo_embarque',doc:{
-        navioId:navRef.id, navio:'GREEN VITORIA', data:hojeD,
-        periodo:PER_LABELS[pi], periodoIdx:pi,
-        ternos:[1,2].map(t=>({
-          terno:t,
-          guincheiro:pick(['ROBSON MOTA','JEAN CARLOS','ADRIANO LUZ','WESLEY PINTO']),
-          portaEntra:String(t===1?2:4), portaSai:String(t===1?3:5),
-          carretas:[0,1,2].map(k=>({placa:placas[(t-1)*3+k],motorista:mots[(t-1)*3+k],
-                                    trocadoEm:null,placaAnterior:null,motoristaAnterior:null}))
-        })),
-        atualizadoPor:'STEFANI VIEIRA', atualizadoEm:new Date().toISOString(), demo:true}});
-    });
-
     lote.push({col:'inversoes',doc:{
       data:hojeD, periodo:PER_LABELS[curPeriodo()], periodoIdx:curPeriodo(), turno:turnoHoje,
       prefixo:'L34', programacaoId:null,
@@ -2812,7 +2694,7 @@ function escutaInversoes(){
   if(!db)return;
   db.collection('inversoes').where('data','in',[diasAtras(1),diasAtras(0)])
     .onSnapshot(s=>{
-      const lista=s.docs.map(d=>({id:d.id,...d.data()}));
+      const lista=s.docs.map(d=>({...d.data(),id:d.id}));
       _invAberta=lista.find(x=>x.solicitadoEm&&!x.concluidoEm)||null;
       pintaInversao(lista);
     },e=>console.error(e));
@@ -2898,9 +2780,9 @@ async function purgar30(){
   const alvos=[];
   try{
     // 1. coleta tudo que será apagado
-    for(const col of ['registros','embarque_horas','estoque_horas','contagens_armazem','inversoes','periodo_embarque']){
+    for(const col of ['registros','embarque_horas','estoque_horas','contagens_armazem','inversoes']){
       const snap=await db.collection(col).where('data','<',corte).get();
-      dump.colecoes[col]=snap.docs.map(d=>({id:d.id,...d.data()}));
+      dump.colecoes[col]=snap.docs.map(d=>({...d.data(),id:d.id}));
       snap.docs.forEach(d=>alvos.push(d.ref));
     }
     // navios e programações não têm campo data; usa a criação
@@ -2910,7 +2792,7 @@ async function purgar30(){
         const c=d.data().criadoEm||'';
         return c && String(c).slice(0,10)<corte && d.data().ativo!==true && d.data().aberta!==true;
       });
-      dump.colecoes[col]=velhos.map(d=>({id:d.id,...d.data()}));
+      dump.colecoes[col]=velhos.map(d=>({...d.data(),id:d.id}));
       velhos.forEach(d=>alvos.push(d.ref));
     }
     const total=alvos.length;
@@ -2954,7 +2836,7 @@ async function limparHistorico(){
   btn.disabled=true; btn.textContent='Apagando...';
   let n=0;
   try{
-    for(const col of ['registros','embarque_horas','navios','programacoes','estoque_horas','contagens_armazem','inversoes','periodo_embarque']){
+    for(const col of ['registros','embarque_horas','navios','programacoes','estoque_horas','contagens_armazem','inversoes']){
       while(true){
         const snap=await db.collection(col).limit(400).get();
         if(snap.empty)break;
@@ -3036,6 +2918,68 @@ function calcEfetivo(){
 }
 
 // ══════════════════════════════════════════════════════════
+//  CARRETAS UNITRALOG DO EMBARQUE  —  três por terno
+// ══════════════════════════════════════════════════════════
+const CARRETAS_TERNO=3;
+let carretasEmb=[{},{},{}];
+
+function montaCarretasEmb(){
+  const box=document.getElementById('emb-carretas');
+  if(!box)return;
+  box.innerHTML=carretasEmb.map((c,k)=>`
+    <div style="display:grid;grid-template-columns:1fr 1fr 34px;gap:6px;align-items:end;margin-bottom:6px;">
+      <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Placa ${k+1}</label>
+        <input type="text" id="ec-pl${k}" maxlength="8" style="text-transform:uppercase;"
+          value="${(c.placa||'').replace(/"/g,'&quot;')}" placeholder="ABC1D23"
+          onchange="carretasEmb[${k}].placa=this.value.trim().toUpperCase()"></div>
+      <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Motorista ${k+1}</label>
+        <input type="text" id="ec-mt${k}" maxlength="40"
+          value="${(c.motorista||'').replace(/"/g,'&quot;')}" placeholder="Nome"
+          onchange="carretasEmb[${k}].motorista=this.value.trim()"></div>
+      <button class="btn btn-sec btn-sm" style="padding:6px 0;" title="Trocar carreta e motorista"
+        onclick="trocarCarretaEmb(${k})">🔁</button>
+    </div>
+    ${c.trocadoEm?`<p style="font-size:9.5px;color:var(--orange);font-weight:700;margin:-3px 0 8px;">
+      Trocada às ${String(c.trocadoEm).slice(11,16)} \u00b7 antes: ${c.placaAnterior||'—'} / ${c.motoristaAnterior||'—'}</p>`:''}`).join('');
+}
+
+function lerCarretasEmb(){
+  return carretasEmb.map((c,k)=>({
+    placa:(document.getElementById(`ec-pl${k}`)?.value||'').trim().toUpperCase(),
+    motorista:(document.getElementById(`ec-mt${k}`)?.value||'').trim(),
+    trocadoEm:c.trocadoEm||null, placaAnterior:c.placaAnterior||null,
+    motoristaAnterior:c.motoristaAnterior||null
+  })).filter(c=>c.placa||c.motorista);
+}
+
+function trocarCarretaEmb(k){
+  const pl=document.getElementById(`ec-pl${k}`), mt=document.getElementById(`ec-mt${k}`);
+  if(!pl.value.trim()){toast('Preencha a carreta atual antes de trocar.','danger');return;}
+  const nova=prompt(`Nova placa (saindo: ${pl.value.trim().toUpperCase()})`);
+  if(nova===null)return;
+  const novoMot=prompt(`Novo motorista (saindo: ${mt.value.trim()||'—'})`);
+  if(novoMot===null)return;
+  carretasEmb[k]={placa:nova.trim().toUpperCase(), motorista:novoMot.trim(),
+    placaAnterior:pl.value.trim().toUpperCase(), motoristaAnterior:mt.value.trim(),
+    trocadoEm:new Date().toISOString()};
+  montaCarretasEmb();
+  if(frenteAberta&&tipoFrente(frenteAberta)==='embarque')salvarCarretasFrente();
+}
+
+// frente já aberta: grava a troca e o giro sem esperar novo registro
+async function salvarCarretasFrente(){
+  if(!frenteAberta||!db)return;
+  const prod={...(frenteAberta.producao||{}),
+    giro:{entra:document.getElementById('emb-porta')?.value||frenteAberta.producao?.giro?.entra||'',
+          sai:document.getElementById('emb-porta-sai')?.value||frenteAberta.producao?.giro?.sai||''},
+    carretas:lerCarretasEmb()};
+  try{
+    await db.collection('registros').doc(frenteAberta.id).update({producao:prod});
+    toast('Carretas atualizadas.','success');
+  }catch(e){toast('Erro: '+e.message,'danger');}
+}
+
+// ══════════════════════════════════════════════════════════
 //  SIMULTANEIDADE FERRO × RODO  —  avisa, não trava
 // ══════════════════════════════════════════════════════════
 let _ctx={progFerro:null,progRodo:null,progAvaria:null,vagoesFeitos:0,buffer:null,bufferData:null};
@@ -3044,7 +2988,7 @@ async function carregaContexto(){
   if(!db)return;
   try{
     const pr=await db.collection('programacoes').where('aberta','==',true).get();
-    const ps=pr.docs.map(d=>({id:d.id,...d.data()}));
+    const ps=pr.docs.map(d=>({...d.data(),id:d.id}));
     _ctx.progFerro =ps.find(p=>p.tipo==='ferro')||null;
     _ctx.progRodo  =ps.find(p=>p.tipo==='rodo')||null;
     _ctx.progAvaria=ps.find(p=>p.tipo==='avaria')||null;
@@ -3297,7 +3241,7 @@ function escutaRetaguarda(){
   }catch(e){console.error(e);}
   db.collection('programacoes').where('aberta','==',true)
     .onSnapshot(s=>{
-      progAbertas=s.docs.map(d=>({id:d.id,...d.data()}));
+      progAbertas=s.docs.map(d=>({...d.data(),id:d.id}));
       window._progsAbertas=progAbertas;
       pintaProgs(); pintaInversao(null);
     },e=>console.error(e));
@@ -3934,7 +3878,7 @@ async function fetchDocs({de,ate,turno,atv}={}){
       if(de)q=q.where('data','>=',de);
       if(ate)q=q.where('data','<=',ate);
       const snap=await q.orderBy('data','desc').limit(1000).get();
-      docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+      docs=snap.docs.map(d=>({...d.data(),id:d.id}));
     }catch(e){
       console.error('Falha ao consultar registros:',e);
       if(typeof toast==='function')toast('Não foi possível carregar os registros.','danger');

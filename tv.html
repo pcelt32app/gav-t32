@@ -286,7 +286,7 @@ function curPer(){const h=new Date().getHours();return h>=7&&h<13?0:h>=13&&h<19?
 function turnoAgora(){const e=DADOS.escala[hoje()];return e?e[curPer()]:'\u2014';}
 
 let db=null, unsubHoras=null;
-let dados={regs:[],navio:null,naviosAtivos:[],horas:[],progs:[],estoque:[],contagem:null,inversoes:[],periodos:[]};
+let dados={regs:[],navio:null,naviosAtivos:[],horas:[],progs:[],estoque:[],contagem:null,inversoes:[]};
 let ultOk=null;
 
 // ── relógio, turno e conexão ──
@@ -351,8 +351,6 @@ function escutar(){
   db.collection('estoque_horas').where('data','==',d)
     .onSnapshot(s=>{dados.estoque=s.docs.map(x=>x.data())
       .sort((a,b)=>String(a.hora).localeCompare(String(b.hora)));ok();},err);
-  db.collection('periodo_embarque').where('data','in',[ontem(),d])
-    .onSnapshot(s=>{dados.periodos=s.docs.map(x=>x.data());ok();},err);
   db.collection('inversoes').where('data','in',[ontem(),d])
     .onSnapshot(s=>{dados.inversoes=s.docs.map(x=>x.data());ok();},err);
   db.collection('contagens_armazem').orderBy('data','desc').limit(1)
@@ -530,7 +528,13 @@ function cardFrente(r){
   const ms=[...((r.recursos&&r.recursos.empilhadeiras)||[]),...((r.recursos&&r.recursos.porticos)||[])]
            .map(m=>m.maq+(m.op?' \u00b7 '+m.op:'')).filter(Boolean);
   const p=r.producao; let prod='';
-  if(p){
+  if(p&&(p.giro||Array.isArray(p.carretas))){
+    if(p.giro&&p.giro.entra&&p.giro.sai)
+      prod+=`<span class="pill">giro: entra na ${p.giro.entra}, sai na ${p.giro.sai}</span>`;
+    (p.carretas||[]).filter(c=>c.placa).forEach(c=>{
+      prod+=`<span class="pill o">${c.placa}${c.motorista?' \u00b7 '+c.motorista:''}</span>`;});
+  }
+  else if(p){
     if(p.unidade==='ton'&&p.valor)prod=`<span class="pill">${fmt(p.valor)} t</span>`;
     else if(p.valor&&p.unidade==='vaos')prod=`<span class="pill">${p.valor} v\u00e3os</span>`;
     else if(p.valor&&p.unidade==='maquinas')prod=`<span class="pill">${p.valor} m\u00e1q.</span>`;
@@ -683,14 +687,7 @@ function embGrade(){
   if(!doDia.length){box.innerHTML='<div class="vazio">Nenhuma hora lan\u00e7ada hoje.</div>';return;}
 
   const nT=dados.navio.ternos||2;
-  const per=dados.periodos.find(x=>x.data===hoje()&&x.periodoIdx===curPer())||null;
-  const infoTerno=i=>{
-    const t=((per&&per.ternos)||[])[i-1]; if(!t)return '';
-    const bits=[];
-    if(t.guincheiro)bits.push('guinch. '+t.guincheiro);
-    if(t.portaEntra&&t.portaSai)bits.push(`giro ${t.portaEntra}\u2192${t.portaSai}`);
-    return bits.length?`<br><span class="sub">${bits.join(' \u00b7 ')}</span>`:'';
-  };
+
   const linhas=doDia.slice(-9);
   box.innerHTML=`<table class="grade">
     <thead><tr><th>Hora</th>
@@ -701,8 +698,9 @@ function embGrade(){
         const d=(x.ternos||[]).find(y=>y.terno===t);
         if(!d)return '<td>\u2014</td>';
         const car=d.carretas?` \u00b7 ${d.carretas} car`:'';
-        return `<td>${fmt(d.ton)} t<span class="pr"> \u00b7 P${d.porao||'\u2014'}${car}</span>`+
-               `${i===linhas.length-1?infoTerno(t):''}</td>`;};
+        const gui=(i===linhas.length-1&&d.guincheiro)
+          ?`<br><span class="sub">guinch. ${d.guincheiro}</span>`:'';
+        return `<td>${fmt(d.ton)} t<span class="pr"> \u00b7 P${d.porao||'\u2014'}${car}</span>${gui}</td>`;};
       const par=listaParalisacoes(x);
       return `<tr class="${i===linhas.length-1?'ult':''}"><td>${x.hora}</td>
         ${[...Array(nT)].map((_,k)=>cel(k+1)).join('')}
@@ -715,12 +713,7 @@ function embGrade(){
 function embFrentes(){
   const box=document.getElementById('emb-frentes');
   const lista=frentesDoPeriodo().filter(r=>r.atividade==='embarque');
-  const per=dados.periodos.find(x=>x.data===hoje()&&x.periodoIdx===curPer())||null;
-  const giros=((per&&per.ternos)||[]).filter(t=>t.portaEntra&&t.portaSai)
-    .map(t=>`<span class="pill">${t.terno}\u00ba terno \u00b7 giro: entra na Porta ${t.portaEntra}, sai na Porta ${t.portaSai}</span>`)
-    .join('');
-  box.innerHTML=(giros?`<div style="margin-bottom:8px;">${giros}</div>`:'')+
-    (lista.length?lista.map(cardFrente).join('')
+  box.innerHTML=(lista.length?lista.map(cardFrente).join('')
     :'<div class="vazio">Nenhuma frente de embarque neste per\u00edodo.</div>');
 }
 </script>
