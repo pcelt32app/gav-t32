@@ -164,7 +164,11 @@
   /* grade hora a hora */
   table.grade{width:100%;border-collapse:collapse;font-size:11px}
   table.grade th{font-size:8.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
-                 color:var(--muted);text-align:left;padding:0 6px 5px;border-bottom:1px solid var(--border)}
+                 color:var(--muted);text-align:left;padding:4px 6px 6px;
+                 border-bottom:1px solid var(--border);
+                 position:sticky;top:0;background:var(--card);z-index:2}
+  table.grade th .sub2{display:block;font-size:9px;font-weight:800;letter-spacing:0;
+                       text-transform:none;color:var(--teal);margin-top:2px}
   table.grade td{padding:5px 6px;border-bottom:1px solid #EEF2F6;font-weight:700;
                  font-variant-numeric:tabular-nums}
   table.grade td.num{text-align:right}
@@ -527,6 +531,9 @@ function cardFrente(r){
   const pessoas=[r.colaborador,...((e.colegas||[]).map(c=>c.nome+(c.fte?' (FTE)':'')))].filter(Boolean);
   const ms=[...((r.recursos&&r.recursos.empilhadeiras)||[]),...((r.recursos&&r.recursos.porticos)||[])]
            .map(m=>m.maq+(m.op?' \u00b7 '+m.op:'')).filter(Boolean);
+  // o nome do operador da casa já vem junto da máquina; o OGMO não tem nome, então é contagem
+  const nOgmo=e.ogmo||0;
+  const operadores=nOgmo?(nOgmo===1?'1 OGMO':`${nOgmo} OGMO`):'';
   const p=r.producao; let prod='';
   if(p&&(p.giro||Array.isArray(p.carretas))){
     if(p.giro&&p.giro.entra&&p.giro.sai)
@@ -547,9 +554,9 @@ function cardFrente(r){
     <div class="t"><span>${ATV[r.atividade]||r.atividade}</span>
       ${viva?'<em>\u25cf em andamento</em>':`<span class="hh">${(r.frente&&r.frente.inicio)||''}\u2013${(r.frente&&r.frente.fim)||''}</span>`}</div>
     <div class="d">${prod}
-      ${e.ogmo?`<span class="pill o">${e.ogmo} OGMO</span>`:''}
+      ${operadores?`<span class="pill">${operadores}</span>`:''}
       ${def?'<span class="pill r">defeito</span>':''}${tpa?'<span class="pill r">TPA</span>':''}
-      ${r.detalhe?r.detalhe+'<br>':''}
+      ${r.detalhe?String(r.detalhe).split(' \u00b7 giro:')[0]+'<br>':''}
       <b>${pessoas.join(', ')}</b>
       ${ms.length?'<br>'+ms.join(' \u00b7 '):''}</div>
   </div>`;
@@ -691,16 +698,25 @@ function embGrade(){
   const linhas=doDia.slice(-9);
   box.innerHTML=`<table class="grade">
     <thead><tr><th>Hora</th>
-      ${[...Array(nT)].map((_,i)=>`<th>${i+1}\u00ba terno</th>`).join('')}
+      ${[...Array(nT)].map((_,i)=>{
+        const t=i+1;
+        // se o terno trocou de porão no período, mostra a sequência inteira
+        const seq=[];
+        linhas.forEach(l=>{
+          const d=(l.ternos||[]).find(y=>y.terno===t);
+          if(d&&d.porao&&seq[seq.length-1]!==d.porao)seq.push(d.porao);
+        });
+        const ult=linhas[linhas.length-1];
+        const g=(((ult&&ult.ternos)||[]).find(y=>y.terno===t)||{}).guincheiro||'';
+        const sub=[seq.length?'Por\u00e3o '+seq.join(' \u2192 '):'', g].filter(Boolean).join(' \u00b7 ');
+        return `<th>${t}\u00ba terno${sub?`<br><span class="sub2">${sub}</span>`:''}</th>`;}).join('')}
       <th style="text-align:right;">Soma t</th><th>Paralisa\u00e7\u00e3o</th></tr></thead>
     <tbody>${linhas.map((x,i)=>{
       const cel=t=>{
         const d=(x.ternos||[]).find(y=>y.terno===t);
         if(!d)return '<td>\u2014</td>';
         const car=d.carretas?` \u00b7 ${d.carretas} car`:'';
-        const gui=(i===linhas.length-1&&d.guincheiro)
-          ?`<br><span class="sub">guinch. ${d.guincheiro}</span>`:'';
-        return `<td>${fmt(d.ton)} t<span class="pr"> \u00b7 P${d.porao||'\u2014'}${car}</span>${gui}</td>`;};
+        return `<td>${fmt(d.ton)} t<span class="pr">${car}</span></td>`;};
       const par=listaParalisacoes(x);
       return `<tr class="${i===linhas.length-1?'ult':''}"><td>${x.hora}</td>
         ${[...Array(nT)].map((_,k)=>cel(k+1)).join('')}

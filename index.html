@@ -1122,6 +1122,7 @@ function doLoginLid(){
   const id=raw.toUpperCase();
   // acesso das estagiárias: login padrão, nome digitado no inventário
   if(raw.toUpperCase()==='ESTAGIO'&&senha==='estg'){
+    document.getElementById('err-lid').style.display='none';
     const nome=(prompt('Seu nome, por favor:')||'').trim();
     if(!nome){document.getElementById('err-lid').style.display='block';return;}
     document.getElementById('err-lid').style.display='none';
@@ -1692,6 +1693,7 @@ function resetForm(){
 let sucUnsub=null;
 
 function pintaSucesso(docs){
+  window._ultDocsSucesso=docs;
   pintaFrenteAberta(docs);
   if(!_ctx.carregado){_ctx.carregado=true;carregaContexto();}
   const colT=docs.reduce((s,d)=>s+(d.recursos?.coletores?.qtd||0),0);
@@ -1705,10 +1707,12 @@ function pintaSucesso(docs){
     if(tp==='avaria'&& d.atividade==='avarias')return s+(p.carretas||0);
     return s;},0);
   const cardCar=(tp,rot)=>{
+    const feito=carDe(tp);
     const prog=(tp==='rodo'?_ctx.progRodo:_ctx.progAvaria)?.carretasProg||0;
-    if(!prog)return '';
+    if(!prog&&!feito)return '';                    // nada feito e nada programado: não ocupa espaço
     return `<div class="mini-stat ${tp==='rodo'?'t':'o'}">
-      <div class="v">${carDe(tp)}/${prog}</div><div class="l">${rot}</div></div>`;
+      <div class="v">${prog?`${feito}/${prog}`:feito}</div>
+      <div class="l">${rot}${prog?'':' · sem programação'}</div></div>`;
   };
   document.getElementById('suc-stats').innerHTML=`
     <div class="mini-stat"><div class="v">${docs.length}</div><div class="l">Registros</div></div>
@@ -1936,8 +1940,25 @@ function montaTernos(){
       <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Atados</label><input type="text" inputmode="decimal" id="eh-t${i}-at" placeholder="0" oninput="calcHora()"></div>
       <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Toneladas</label><input type="text" inputmode="decimal" id="eh-t${i}-ton" placeholder="0" oninput="calcHora()"></div>
       <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Carretas</label><input type="text" inputmode="decimal" id="eh-t${i}-cat" placeholder="0" oninput="calcHora()"></div>
-    </div>`).join('');
+    </div>
+    <div class="fgrp" style="margin:7px 0 0;"><label style="font-size:9px;">Guincheiro</label>
+      <input type="text" id="eh-t${i}-gui" maxlength="40" placeholder="Nome do guincheiro"
+        value="${(guincheiroAnterior(i+1)||'').replace(/"/g,'&quot;')}"></div>`).join('');
   calcHora();
+}
+
+// último guincheiro lançado neste período, para não redigitar a cada hora
+function guincheiroAnterior(terno){
+  const dia=document.getElementById('eh-data')?.value;
+  const per=document.getElementById('eh-periodo')?.value;
+  const hs=(window._embhTodas||[])
+    .filter(h=>h.data===dia&&h.periodo===per)
+    .sort((a,b)=>String(b.hora).localeCompare(String(a.hora)));
+  for(const h of hs){
+    const t=(h.ternos||[]).find(x=>x.terno===terno);
+    if(t&&t.guincheiro)return t.guincheiro;
+  }
+  return '';
 }
 
 function ternosDoForm(){
@@ -1947,7 +1968,8 @@ function ternosDoForm(){
     const ton=nDec(`eh-t${i}-ton`)||0;
     if(!porao&&!ton)continue;
     arr.push({terno:i+1,porao:porao?parseInt(porao):null,
-      atados:nDec(`eh-t${i}-at`)||0, ton, carretas:nDec(`eh-t${i}-cat`)||0});
+      atados:nDec(`eh-t${i}-at`)||0, ton, carretas:nDec(`eh-t${i}-cat`)||0,
+      guincheiro:(document.getElementById(`eh-t${i}-gui`)?.value||'').trim()});
   }
   return arr;
 }
@@ -2214,10 +2236,7 @@ function pintaGrade(horas){
     acum+=r.somaTon||0;
     const cel=i=>{const t=(r.ternos||[]).find(x=>x.terno===i);
       if(!t)return '—';
-      const g=((perEmb?.ternos)||[])[i-1]||{};
-      const extra=[g.guincheiro?'guinch. '+g.guincheiro:'',
-                   (g.portaEntra&&g.portaSai)?`giro ${g.portaEntra}→${g.portaSai}`:'']
-                  .filter(Boolean).join(' · ');
+      const extra=t.guincheiro?'guinch. '+t.guincheiro:'';
       return `P${t.porao||'—'} · ${fmtT(t.ton)} t · ${t.carretas||0} car`+
              (extra?`<br><span style="font-size:9.5px;color:#7a8fa6;font-weight:600;">${extra}</span>`:'');};
     const lp=r.paralisacoes||(r.paralisacao?[r.paralisacao]:[]);
@@ -2494,7 +2513,12 @@ async function cargaDemo(){
         frentes.forEach((f,idx)=>{
           const aux=auxTurno[idx%auxTurno.length];
           const maqs=[{maq:pick(emp),op:pick(opsTurno)?.nome||''}];
-          if(f.atv==='embarque')maqs.push({maq:pick(prt),op:pick(opsPrtTurno.length?opsPrtTurno:opsTurno)?.nome||''});
+          // no embarque só entra empilhadeira; o operador de pórtico pode estar numa delas
+          if(f.atv==='embarque'){
+            const nCasa=rnd(0,2);
+            for(let q=0;q<Math.max(1,nCasa);q++)
+              maqs.push({maq:pick(emp),op:nCasa?pick(opsTurno)?.nome||'':''});
+          }
           const temDef=Math.random()<0.12;
           const temTpa=Math.random()<0.10;
 
@@ -2530,11 +2554,19 @@ async function cargaDemo(){
           }
 
           lote.push({col:'registros',doc:{
-            id:'demo_'+data+'_'+pi+'_'+idx, data, turno, periodo, periodoIdx:pi,
+            demoRef:'demo_'+data+'_'+pi+'_'+idx, data, turno, periodo, periodoIdx:pi,
             matricula:aux.mat, colaborador:aux.nome, fte:false, turnoOrigem:aux.turno,
             atividade:f.atv, detalhe, hora:hh(idx),
-            efetivo:{auxCasa:1,opCasa:maqs.length,ogmo:f.atv==='embarque'?2:0,terc:0,
-                     casa:1+maqs.length,externo:f.atv==='embarque'?2:0,total:1+maqs.length+(f.atv==='embarque'?2:0)},
+            efetivo:(()=>{
+              if(f.atv!=='embarque')
+                return {auxCasa:1,opCasa:maqs.length,ogmo:0,terc:0,
+                        casa:1+maqs.length,externo:0,total:1+maqs.length};
+              // no terno são sempre dois operadores: 2 OGMO, 1 da casa + 1 OGMO, ou 2 da casa
+              const daCasa=rnd(0,2);                 // quantos dos dois vêm da casa
+              const ogmo=2-daCasa;
+              return {auxCasa:1,opCasa:daCasa,ogmo,terc:0,
+                      casa:1+daCasa,externo:ogmo,total:1+daCasa+ogmo};
+            })(),
             frente:(d===0&&pi===curPeriodo()&&idx<2)
                    ?{inicio:hh(idx),fim:'',ativa:true}
                    :{inicio:hh(idx),fim:hh(idx+2),ativa:false},
@@ -3006,6 +3038,7 @@ async function carregaContexto(){
     }
   }catch(e){console.error(e);}
   avisoSimultaneo();
+  if(window._ultDocsSucesso)pintaSucesso(window._ultDocsSucesso);   // recalcula os cards
 }
 
 // "9 de 22 carretas" quando houver programação; senão só o número
@@ -3024,6 +3057,7 @@ function avisoSimultaneo(){
   if(!alvoRodo){box.style.display='none';return;}
 
   const motivos=[];
+  const semProg=(atv==='avarias')?!_ctx.progAvaria:!_ctx.progRodo;
   const prog=_ctx.progFerro?.vagoesProg||0;
   const pend=Math.max(0,prog-_ctx.vagoesFeitos);
   if(_ctx.progFerro&&pend>0)
@@ -3033,13 +3067,18 @@ function avisoSimultaneo(){
                  `${String(_ctx.bufferData).slice(8,10)}/${String(_ctx.bufferData).slice(5,7)}, `+
                  `perto da capacidade de ${BUFFER_ATADOS}`);
 
-  if(!motivos.length){box.style.display='none';return;}
+  const linhaProg=semProg
+    ? `<br>Não há programação de ${atv==='avarias'?'avaria':'rodoviário'} aberta para hoje —
+       o lançamento conta, mas sem número programado para comparar.`
+    : '';
+  if(!motivos.length&&!semProg){box.style.display='none';return;}
   box.style.display='block';
   box.innerHTML=`<b>⚠️ Confira antes de lançar.</b><br>
-    O rodoviário só deve ser recebido depois que a composição inteira for descarregada, e com
-    espaço no buffer. Aqui, ${motivos.join(' e ')}.<br>
+    ${motivos.length?`O rodoviário só deve ser recebido depois que a composição inteira for
+      descarregada, e com espaço no buffer. Aqui, ${motivos.join(' e ')}.`:''}
+    ${linhaProg}<br>
     <span style="font-weight:600;">Se estiver certo, pode lançar mesmo assim — isto é um aviso,
-    não um bloqueio. O buffer vem da última contagem, então pode estar desatualizado.</span>`;
+    não um bloqueio.${motivos.length?' O buffer vem da última contagem, então pode estar desatualizado.':''}</span>`;
 }
 
 // ── Grades hora a hora ──
@@ -3624,7 +3663,7 @@ async function encerrarFrente(){
 // As abas Auxiliares e Operadores são só de supervisor e coordenador.
 function ehCoordenador(){return currentLider?.funcao==='COORDENADOR';}
 function ehSupervisor(){return currentLider?.funcao==='SUPERVISOR';}
-function podeInventariar(){return ['CONTROLADOR','ASSISTENTE'].includes(currentLider?.funcao);}
+function podeInventariar(){return ['CONTROLADOR','ASSISTENTE','ESTAGIARIA'].includes(currentLider?.funcao);}
 function turnoPermitido(){return ehCoordenador()?null:(currentLider?.turno||null);}
 
 // Trava os seletores de turno de quem não é coordenador
