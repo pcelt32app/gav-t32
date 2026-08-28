@@ -47,9 +47,12 @@
            color:var(--muted);padding:0 2px;flex:none}
   .bloco{background:var(--card);border:1px solid var(--border);border-radius:12px;
          padding:13px 15px;display:flex;flex-direction:column;min-height:0}
-  .bloco.f30{flex:30 1 0;min-height:0}
-  .bloco.f32{flex:32 1 0;min-height:0}
+  .bloco.f26{flex:26 1 0;min-height:0}
+  .bloco.f28{flex:28 1 0;min-height:0}
+  .bloco.f34{flex:34 1 0;min-height:0}
+  .bloco.f36{flex:36 1 0;min-height:0}
   .bloco.f38{flex:38 1 0;min-height:0}
+  .bloco.f40{flex:40 1 0;min-height:0}
   .bloco > div{min-height:0;overflow:auto}
   .bloco > div::-webkit-scrollbar{width:5px}
   .bloco > div::-webkit-scrollbar-thumb{background:#C9D6E3;border-radius:3px}
@@ -168,6 +171,7 @@
   table.grade td.par{font-size:9.5px;font-weight:800;color:var(--danger);white-space:nowrap}
   table.grade tr.ult td{background:#F4FAEC}
   table.grade td .pr{font-size:9px;font-weight:700;color:var(--muted)}
+  table.grade td .sub{font-size:9px;font-weight:700;color:var(--teal)}
 
   .vazio{font-size:11.5px;font-weight:600;color:var(--muted);text-align:center;padding:18px 8px;line-height:1.6}
 
@@ -205,12 +209,12 @@
   <div class="col">
     <div class="col-rot">Retaguarda</div>
 
-    <div class="bloco b-est f30">
+    <div class="bloco b-est f36">
       <h2>Estoque do armazém<span class="dir" id="est-dir"></span></h2>
       <div id="est-corpo"></div>
     </div>
 
-    <div class="bloco b-desc f32">
+    <div class="bloco b-desc f28">
       <h2>Descarga<span class="dir" id="desc-dir"></span></h2>
       <div id="desc-corpo"></div>
     </div>
@@ -226,17 +230,17 @@
   <div class="col">
     <div class="col-rot">Embarque</div>
 
-    <div class="bloco b-emb f32">
+    <div class="bloco b-emb f40">
       <h2>Navio em operação</h2>
       <div id="emb-topo"></div>
     </div>
 
-    <div class="bloco b-emb f38">
+    <div class="bloco b-emb f34">
       <h2>Hora a hora por terno<span class="dir" id="emb-grade-dir"></span></h2>
       <div class="cresce" id="emb-grade"></div>
     </div>
 
-    <div class="bloco b-emb f30">
+    <div class="bloco b-emb f26">
       <h2>Frentes no embarque</h2>
       <div class="cresce" id="emb-frentes"></div>
     </div>
@@ -282,7 +286,7 @@ function curPer(){const h=new Date().getHours();return h>=7&&h<13?0:h>=13&&h<19?
 function turnoAgora(){const e=DADOS.escala[hoje()];return e?e[curPer()]:'\u2014';}
 
 let db=null, unsubHoras=null;
-let dados={regs:[],navio:null,naviosAtivos:[],horas:[],progs:[],estoque:[],contagem:null,inversoes:[]};
+let dados={regs:[],navio:null,naviosAtivos:[],horas:[],progs:[],estoque:[],contagem:null,inversoes:[],periodos:[]};
 let ultOk=null;
 
 // ── relógio, turno e conexão ──
@@ -347,6 +351,8 @@ function escutar(){
   db.collection('estoque_horas').where('data','==',d)
     .onSnapshot(s=>{dados.estoque=s.docs.map(x=>x.data())
       .sort((a,b)=>String(a.hora).localeCompare(String(b.hora)));ok();},err);
+  db.collection('periodo_embarque').where('data','in',[ontem(),d])
+    .onSnapshot(s=>{dados.periodos=s.docs.map(x=>x.data());ok();},err);
   db.collection('inversoes').where('data','in',[ontem(),d])
     .onSnapshot(s=>{dados.inversoes=s.docs.map(x=>x.data());ok();},err);
   db.collection('contagens_armazem').orderBy('data','desc').limit(1)
@@ -434,11 +440,13 @@ function descarga(){
   const vg=ferro.reduce((s,r)=>s+(r.producao.qtd||0),0);
   const at=rodo.reduce((s,r)=>s+(r.producao.qtd||0),0);
   const car=rodo.reduce((s,r)=>s+(r.producao.carretas||0),0);
+  const carProg=dados.progs.filter(p=>p.tipo==='rodo').reduce((s,p)=>s+(p.carretasProg||0),0);
 
   let h=`<div class="nums">
     <div class="nn b"><div class="v">${fmt(vg)}</div><div class="l">Vag\u00f5es descarregados</div></div>
     <div class="nn t"><div class="v">${fmt(vg*TON_VAGAO)}</div><div class="l">t ferrovi\u00e1rio</div></div>
-    <div class="nn o"><div class="v">${fmt(car)}</div><div class="l">Carretas</div></div>
+    <div class="nn o"><div class="v">${fmt(car)}</div>
+      <div class="l">${carProg?`de ${fmt(carProg)} carretas`:'Carretas'}</div></div>
     <div class="nn g"><div class="v">${fmt(at*TON_ATADO)}</div><div class="l">t rodovi\u00e1rio</div></div>
   </div>`;
 
@@ -640,7 +648,8 @@ function embTopo(){
         <div class="nm">${n.nome||''}${n.viagem?' \u00b7 '+n.viagem:''}</div>
         <div class="rota">${[n.produto,n.destino,'Ber\u00e7o 32'].filter(Boolean).join(' \u00b7 ')}</div>
         <div class="nums">
-          <div class="nn b"><div class="v">${fmt(carregado)}</div><div class="l">t embarcadas</div></div>
+          <div class="nn b"><div class="v">${fmt(carregado)}</div>
+            <div class="l">de ${fmt(total)} t embarcadas</div></div>
           <div class="nn o"><div class="v">${fmt(saldo)}</div><div class="l">t de saldo</div></div>
           <div class="nn t"><div class="v">${ultima?fmt(ultima.somaTon):'\u2014'}</div><div class="l">\u00faltima hora \u00b7 ${ultima?ultima.hora:'\u2014'}</div></div>
           <div class="nn g"><div class="v">${fmt(medBruta)}</div><div class="l">m\u00e9dia bruta t/h</div></div>
@@ -674,6 +683,14 @@ function embGrade(){
   if(!doDia.length){box.innerHTML='<div class="vazio">Nenhuma hora lan\u00e7ada hoje.</div>';return;}
 
   const nT=dados.navio.ternos||2;
+  const per=dados.periodos.find(x=>x.data===hoje()&&x.periodoIdx===curPer())||null;
+  const infoTerno=i=>{
+    const t=((per&&per.ternos)||[])[i-1]; if(!t)return '';
+    const bits=[];
+    if(t.guincheiro)bits.push('guinch. '+t.guincheiro);
+    if(t.portaEntra&&t.portaSai)bits.push(`giro ${t.portaEntra}\u2192${t.portaSai}`);
+    return bits.length?`<br><span class="sub">${bits.join(' \u00b7 ')}</span>`:'';
+  };
   const linhas=doDia.slice(-9);
   box.innerHTML=`<table class="grade">
     <thead><tr><th>Hora</th>
@@ -683,7 +700,9 @@ function embGrade(){
       const cel=t=>{
         const d=(x.ternos||[]).find(y=>y.terno===t);
         if(!d)return '<td>\u2014</td>';
-        return `<td>${fmt(d.ton)} t<span class="pr"> \u00b7 P${d.porao||'\u2014'}</span></td>`;};
+        const car=d.carretas?` \u00b7 ${d.carretas} car`:'';
+        return `<td>${fmt(d.ton)} t<span class="pr"> \u00b7 P${d.porao||'\u2014'}${car}</span>`+
+               `${i===linhas.length-1?infoTerno(t):''}</td>`;};
       const par=listaParalisacoes(x);
       return `<tr class="${i===linhas.length-1?'ult':''}"><td>${x.hora}</td>
         ${[...Array(nT)].map((_,k)=>cel(k+1)).join('')}
@@ -696,8 +715,13 @@ function embGrade(){
 function embFrentes(){
   const box=document.getElementById('emb-frentes');
   const lista=frentesDoPeriodo().filter(r=>r.atividade==='embarque');
-  box.innerHTML=lista.length?lista.map(cardFrente).join('')
-    :'<div class="vazio">Nenhuma frente de embarque neste per\u00edodo.</div>';
+  const per=dados.periodos.find(x=>x.data===hoje()&&x.periodoIdx===curPer())||null;
+  const giros=((per&&per.ternos)||[]).filter(t=>t.portaEntra&&t.portaSai)
+    .map(t=>`<span class="pill">${t.terno}\u00ba terno \u00b7 giro: entra na Porta ${t.portaEntra}, sai na Porta ${t.portaSai}</span>`)
+    .join('');
+  box.innerHTML=(giros?`<div style="margin-bottom:8px;">${giros}</div>`:'')+
+    (lista.length?lista.map(cardFrente).join('')
+    :'<div class="vazio">Nenhuma frente de embarque neste per\u00edodo.</div>');
 }
 </script>
 </body>

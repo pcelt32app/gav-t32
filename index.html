@@ -415,6 +415,9 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
       </div>
       <div class="atv-sec" id="as-recebimento"><div class="atv-hdr" onclick="selAtv('recebimento')"><input type="radio" name="atv" value="recebimento" id="r-recebimento"><span>🚛 Recebimento</span></div>
         <div class="atv-body">
+          <div id="aviso-simult" style="display:none;background:rgba(217,83,79,.1);
+               border-left:3px solid var(--danger);color:#8f2c28;border-radius:8px;
+               padding:10px 12px;margin-bottom:11px;font-size:11.5px;line-height:1.55;"></div>
           <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;">Tipo *</p>
           <div class="chips" id="receb-chips">
             <label class="chip"><input type="radio" name="receb-tipo" value="Ferro" onchange="togReceb()"> Ferro</label>
@@ -782,6 +785,19 @@ header{background:var(--blue);padding:0 20px;height:60px;display:flex;align-item
         <div class="fgrp"><label>Produto</label><input type="text" id="eh-produto" placeholder="Atados de Celulose"></div>
       </div>
 
+      <div id="eh-periodo-box" style="background:#F6F9FC;border:1px solid var(--border);
+           border-radius:10px;padding:12px 13px;margin-top:14px;">
+        <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin:0 0 3px;text-transform:uppercase;letter-spacing:.4px;">
+          Dados do período</p>
+        <p style="font-size:10.5px;color:#7a8fa6;margin-bottom:10px;line-height:1.5;">
+          Lançados uma vez por período. Todas as horas seguintes herdam.</p>
+        <div id="eh-periodo-campos"></div>
+        <div class="flex-end" style="margin-top:10px;">
+          <button class="btn btn-sec btn-sm" onclick="salvarPeriodoEmb()">Salvar dados do período</button>
+        </div>
+        <div id="eh-per-err" class="err"></div>
+      </div>
+
       <div id="eh-ternos"></div>
 
       <p style="font-size:10px;font-weight:700;color:#7a8fa6;margin:14px 0 7px;text-transform:uppercase;letter-spacing:.4px;">Paralisações (opcional)</p>
@@ -1110,6 +1126,21 @@ function doLoginLid(){
   const senha=document.getElementById('inp-senha').value.trim().toLowerCase();
   if(!raw||!senha)return;
   const id=raw.toUpperCase();
+  // acesso das estagiárias: login padrão, nome digitado no inventário
+  if(raw.toUpperCase()==='ESTAGIO'&&senha==='estg'){
+    const nome=(prompt('Seu nome, por favor:')||'').trim();
+    if(!nome){document.getElementById('err-lid').style.display='block';return;}
+    document.getElementById('err-lid').style.display='none';
+    currentLider={mat:'ESTAGIO',nome:nome.toUpperCase(),funcao:'ESTAGIARIA',turno:null};
+    currentUser=null;
+    aplicarEscopo();
+    setHdr(nome.toUpperCase()+' · Estágio','—');
+    document.getElementById('btn-kpi').style.display='flex';
+    document.getElementById('kpi-gate').style.display='block';
+    showPage('pg-kpi');
+    setTimeout(()=>{ showKTab('inv'); }, 80);
+    return;
+  }
   let found=APP_DATA.lideranca.find(l=>{
     const mOk=l.mat&&String(l.mat)===raw;
     const nOk=l.nome.toUpperCase()===id;
@@ -1212,6 +1243,9 @@ function selAtv(id){
   document.getElementById('r-'+id).checked=true;
   document.querySelectorAll('.inv').forEach(el=>el.classList.remove('inv'));
   if(id==='avarias')montaGradeAvaria();
+  window._atvSel=id;
+  if(!_ctx.carregado){_ctx.carregado=true;carregaContexto();}
+  avisoSimultaneo();
 }
 
 // ══ CAMPOS NOVOS: produção, efetivo, horário da frente ══
@@ -1244,6 +1278,7 @@ function calcTonH(){
 }
 
 function togReceb(){
+  avisoSimultaneo();
   const t=document.querySelector('input[name="receb-tipo"]:checked')?.value;
   document.getElementById('receb-ferro-box').style.display = t==='Ferro'?'block':'none';
   document.getElementById('receb-rodo-box').style.display  = t==='Rodo' ?'block':'none';
@@ -1588,10 +1623,11 @@ async function salvarRegistro(){
     case'limpeza':{const v=document.getElementById('limp-vaos').value.split(',').map(x=>x.trim()).filter(Boolean);producao={unidade:'vaos',valor:v.length,vaos:v};break;}
     case'abastecimento':{const m=[...document.querySelectorAll('#abast-chips input:checked')].map(i=>i.value);producao={unidade:'maquinas',valor:m.length,maquinas:m,pitstops:[nDec('abast-ps1'),nDec('abast-ps2')]};break;}
     case'avarias':{
-      const l=lerHH('avaria',[{k:'at'}]);
-      const at=l.reduce((s,x)=>s+(x.at||0),0);
-      const hs=l.map(x=>({hora:x.hora,atados:x.at,sku:(document.getElementById('avaria-sku-'+x.hora.replace('\u00d7',''))?.value||'').trim().toUpperCase()}));
-      producao={unidade:'ton',valor:+(at*TON_ATADO).toFixed(2),qtd:at,unidadeQtd:'atados',fator:TON_ATADO,horas:hs,
+      const l=lerHH('avaria',[{k:'car'},{k:'at'}]);
+      const at=l.reduce((s,x)=>s+(x.at||0),0), carA=l.reduce((s,x)=>s+(x.car||0),0);
+      const hs=l.map(x=>({hora:x.hora,carretas:x.car,atados:x.at,sku:(document.getElementById('avaria-sku-'+x.hora.replace('\u00d7',''))?.value||'').trim().toUpperCase()}));
+      producao={unidade:'ton',valor:+(at*TON_ATADO).toFixed(2),qtd:at,unidadeQtd:'atados',fator:TON_ATADO,
+                carretas:carA, horas:hs,
                 produtos:[...new Set(hs.map(h=>h.sku).filter(Boolean))]};
       break;}
     case'outros':producao={unidade:'—',valor:null,descricao:document.getElementById('outros-desc').value.trim()};break;
@@ -1846,7 +1882,7 @@ async function loadEmbh(){
   if(!dt.dataset.init){dt.dataset.init='1';dt.onchange=repintaGrade;}
   document.getElementById('eh-produto').value=navioAtual.produto||'';
   parsForm=[]; montaPars();
-  montaHoras(); montaTernos();
+  montaHoras(); montaTernos(); carregaPeriodoEmb();
   escutaHoras();
 }
 
@@ -1854,7 +1890,15 @@ function montaHoras(){
   const per=document.getElementById('eh-periodo').value;
   const sel=document.getElementById('eh-hora');
   const hs=HORAS_PERIODO[per]||[];
-  sel.innerHTML=hs.map(h=>`<option>${h}</option>`).join('');
+  // o auxiliar pode voltar em horas do próprio período; a hora futura fica bloqueada
+  const ehCorrente=document.getElementById('eh-data').value===today()&&
+                   PER_LABELS.indexOf(per)===curPeriodo();
+  const agora=new Date().getHours();
+  sel.innerHTML=hs.map(h=>{
+    const ini=parseInt(h.slice(0,2),10);
+    const futura=ehCorrente&&(((ini-agora)%24)+24)%24<12&&ini>agora;
+    return `<option ${futura?'disabled':''}>${h}${futura?' (ainda não ocorreu)':''}</option>`;
+  }).join('');
   if(per===PER_LABELS[curPeriodo()]&&document.getElementById('eh-data').value===today())
     sel.value=horaSugerida();
   escutaHoras();
@@ -1872,6 +1916,135 @@ function montaTernos(){
       <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Carretas</label><input type="text" inputmode="decimal" id="eh-t${i}-cat" placeholder="0" oninput="calcHora()"></div>
     </div>`).join('');
   calcHora();
+}
+
+// ══════════════════════════════════════════════════════════
+//  DADOS DO PERÍODO  —  guincheiro, giro, carretas e motoristas
+// ══════════════════════════════════════════════════════════
+let perEmb=null;        // documento do período corrente
+const CARRETAS_TERNO=3;
+
+function chavePeriodo(){
+  return `${navioAtual?.id||'x'}_${document.getElementById('eh-data').value}_${document.getElementById('eh-periodo').value}`;
+}
+
+function montaPeriodoEmb(){
+  const n=navioAtual?.ternos||2;
+  const portas=[...Array(6)].map((_,i)=>i+1);
+  const box=document.getElementById('eh-periodo-campos');
+  if(!box)return;
+  const d=perEmb||{ternos:[]};
+  box.innerHTML=[...Array(n)].map((_,i)=>{
+    const t=(d.ternos||[])[i]||{};
+    const cs=t.carretas||[];
+    const opt=(v,sel)=>`<option value="${v}" ${String(sel)===String(v)?'selected':''}>Porta ${v}</option>`;
+    return `
+    <p style="font-size:10px;font-weight:800;color:var(--blue);margin:${i?'14px':'0'} 0 7px;
+       text-transform:uppercase;letter-spacing:.4px;">${i+1}º Terno</p>
+    <div class="fgrp" style="margin:0 0 8px;"><label style="font-size:9px;">Guincheiro</label>
+      <input type="text" id="pe-t${i}-gui" maxlength="40" value="${(t.guincheiro||'').replace(/"/g,'&quot;')}"
+        placeholder="Nome do guincheiro"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+      <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Giro · entra na</label>
+        <select id="pe-t${i}-ent"><option value="">—</option>${portas.map(v=>opt(v,t.portaEntra)).join('')}</select></div>
+      <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Giro · sai na</label>
+        <select id="pe-t${i}-sai"><option value="">—</option>${portas.map(v=>opt(v,t.portaSai)).join('')}</select></div>
+    </div>
+    <p style="font-size:9px;font-weight:700;color:#7a8fa6;margin:9px 0 5px;text-transform:uppercase;">Carretas Unitralog</p>
+    ${[...Array(CARRETAS_TERNO)].map((_,k)=>{
+      const c=cs[k]||{};
+      const trocada=!!c.trocadoEm;
+      return `<div style="display:grid;grid-template-columns:1fr 1fr 34px;gap:6px;margin-bottom:6px;align-items:end;">
+        <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Placa ${k+1}</label>
+          <input type="text" id="pe-t${i}-pl${k}" maxlength="8" style="text-transform:uppercase;"
+            value="${(c.placa||'').replace(/"/g,'&quot;')}" placeholder="ABC1D23"></div>
+        <div class="fgrp" style="margin:0;"><label style="font-size:9px;">Motorista ${k+1}</label>
+          <input type="text" id="pe-t${i}-mt${k}" maxlength="40"
+            value="${(c.motorista||'').replace(/"/g,'&quot;')}" placeholder="Nome"></div>
+        <button class="btn btn-sec btn-sm" style="padding:6px 0;" title="Trocar carreta e motorista"
+          onclick="trocarCarreta(${i},${k})">🔁</button>
+      </div>
+      ${trocada?`<p style="font-size:9.5px;color:var(--orange);font-weight:700;margin:-3px 0 8px;">
+        Trocada às ${String(c.trocadoEm).slice(11,16)} \u00b7 antes: ${c.placaAnterior||'—'} / ${c.motoristaAnterior||'—'}</p>`:''}`;
+    }).join('')}`;
+  }).join('');
+}
+
+function lerPeriodoEmb(){
+  const n=navioAtual?.ternos||2, arr=[];
+  for(let i=0;i<n;i++){
+    const ant=((perEmb?.ternos)||[])[i]||{};
+    const cs=[];
+    for(let k=0;k<CARRETAS_TERNO;k++){
+      const c=(ant.carretas||[])[k]||{};
+      cs.push({
+        placa:(document.getElementById(`pe-t${i}-pl${k}`)?.value||'').trim().toUpperCase(),
+        motorista:(document.getElementById(`pe-t${i}-mt${k}`)?.value||'').trim(),
+        trocadoEm:c.trocadoEm||null, placaAnterior:c.placaAnterior||null,
+        motoristaAnterior:c.motoristaAnterior||null
+      });
+    }
+    arr.push({
+      terno:i+1,
+      guincheiro:(document.getElementById(`pe-t${i}-gui`)?.value||'').trim(),
+      portaEntra:document.getElementById(`pe-t${i}-ent`)?.value||'',
+      portaSai:document.getElementById(`pe-t${i}-sai`)?.value||'',
+      carretas:cs
+    });
+  }
+  return arr;
+}
+
+async function salvarPeriodoEmb(){
+  const err=document.getElementById('eh-per-err');
+  err.style.display='none';
+  if(!navioAtual){err.textContent='Cadastre o navio primeiro.';err.style.display='block';return;}
+  const rec={
+    navioId:navioAtual.id, navio:navioAtual.nome,
+    data:document.getElementById('eh-data').value,
+    periodo:document.getElementById('eh-periodo').value,
+    periodoIdx:PER_LABELS.indexOf(document.getElementById('eh-periodo').value),
+    ternos:lerPeriodoEmb(),
+    atualizadoPor:currentLider?.nome||currentUser?.nome||'',
+    atualizadoEm:new Date().toISOString()
+  };
+  try{
+    await db.collection('periodo_embarque').doc(chavePeriodo()).set(rec,{merge:true});
+    perEmb={id:chavePeriodo(),...rec};
+    toast('Dados do período salvos.','success');
+    montaPeriodoEmb();
+  }catch(e){err.textContent='Erro: '+e.message;err.style.display='block';}
+}
+
+// troca de carreta guarda quem saiu e a hora
+async function trocarCarreta(i,k){
+  const placa=document.getElementById(`pe-t${i}-pl${k}`);
+  const mot=document.getElementById(`pe-t${i}-mt${k}`);
+  if(!placa.value.trim()){toast('Preencha a carreta atual antes de trocar.','danger');return;}
+  const nova=prompt(`Nova placa (saindo: ${placa.value.trim().toUpperCase()})`);
+  if(nova===null)return;
+  const novoMot=prompt(`Novo motorista (saindo: ${mot.value.trim()||'—'})`);
+  if(novoMot===null)return;
+  perEmb=perEmb||{ternos:lerPeriodoEmb()};
+  perEmb.ternos=perEmb.ternos||lerPeriodoEmb();
+  const t=perEmb.ternos[i]||(perEmb.ternos[i]={terno:i+1,carretas:[]});
+  t.carretas=t.carretas||[];
+  t.carretas[k]={
+    placa:nova.trim().toUpperCase(), motorista:novoMot.trim(),
+    placaAnterior:placa.value.trim().toUpperCase(), motoristaAnterior:mot.value.trim(),
+    trocadoEm:new Date().toISOString()
+  };
+  montaPeriodoEmb();
+  await salvarPeriodoEmb();
+}
+
+async function carregaPeriodoEmb(){
+  if(!db||!navioAtual){montaPeriodoEmb();return;}
+  try{
+    const d=await db.collection('periodo_embarque').doc(chavePeriodo()).get();
+    perEmb=d.exists?{id:d.id,...d.data()}:null;
+  }catch(e){perEmb=null;}
+  montaPeriodoEmb();
 }
 
 function ternosDoForm(){
@@ -2052,6 +2225,7 @@ async function salvarHora(){
     somaAtados:+ternos.reduce((s,t)=>s+t.atados,0).toFixed(2),
     somaCarretas:+ternos.reduce((s,t)=>s+t.carretas,0).toFixed(2),
     paralisacoes: pars,
+    periodoEmbId: chavePeriodo(),
     lancadoPor:currentLider?.nome||'', matriculaLancou:currentLider?.mat||null,
     funcao:currentLider?.funcao||'',
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -2070,6 +2244,12 @@ async function salvarHora(){
 }
 
 // Escuta ao vivo as horas do dia — a grade e o saldo se atualizam sozinhos
+function periodoFechado(data,per){
+  if(data<today())return true;
+  if(data>today())return false;
+  return PER_LABELS.indexOf(per)!==curPeriodo();
+}
+
 function escutaHoras(){
   if(!db||!navioAtual)return;
   if(embhUnsub){embhUnsub();embhUnsub=null;}
@@ -2141,7 +2321,13 @@ function pintaGrade(horas){
     if(!r)return `<tr style="opacity:.4;"><td>${h}</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
     acum+=r.somaTon||0;
     const cel=i=>{const t=(r.ternos||[]).find(x=>x.terno===i);
-      return t?`P${t.porao||'—'} · ${fmtT(t.ton)} t · ${t.carretas||0} car`:'—';};
+      if(!t)return '—';
+      const g=((perEmb?.ternos)||[])[i-1]||{};
+      const extra=[g.guincheiro?'guinch. '+g.guincheiro:'',
+                   (g.portaEntra&&g.portaSai)?`giro ${g.portaEntra}→${g.portaSai}`:'']
+                  .filter(Boolean).join(' · ');
+      return `P${t.porao||'—'} · ${fmtT(t.ton)} t · ${t.carretas||0} car`+
+             (extra?`<br><span style="font-size:9.5px;color:#7a8fa6;font-weight:600;">${extra}</span>`:'');};
     const lp=r.paralisacoes||(r.paralisacao?[r.paralisacao]:[]);
     const par=lp.length
       ? lp.map(x=>`<span class="badge br" title="${x.motivo||''}${x.obs?' — '+x.obs:''}">${x.sigla}${x.min?' '+String(x.min).padStart(2,'0')+'min':''}</span>`).join(' ')
@@ -2151,7 +2337,11 @@ function pintaGrade(horas){
       : '';
     return `<tr><td><b>${h}</b></td><td>${cel(1)}</td><td>${cel(2)}</td><td><b>${fmtT(r.somaTon)}</b></td><td>${fmtT(r.somaTon)}</td><td>${par}${bt}</td></tr>`;
   }).join('')+
-  `<tr style="background:rgba(0,74,153,.06);"><td><b>TOTAL</b></td><td></td><td></td><td><b>${fmtT(acum)}</b></td><td><b>${fmtT(acum/Math.max(1,horas.length))} méd.</b></td><td></td></tr>`;
+  `<tr style="background:rgba(0,74,153,.06);"><td><b>TOTAL</b></td><td></td><td></td><td><b>${fmtT(acum)}</b></td><td><b>${fmtT(acum/Math.max(1,horas.length))} méd.</b></td><td></td></tr>`+
+  (periodoFechado(document.getElementById('eh-data').value||today(),per)
+    ? `<tr style="background:rgba(138,186,61,.16);"><td colspan="6" style="font-weight:800;color:#5E8A16;">
+        Período ${per} fechado \u00b7 ${fmtT(acum)} t em ${horas.length} hora(s) lançada(s)</td></tr>`
+    : '');
 }
 
 const INV_ITENS=[{"id": 1, "nome": "Cinto de Segurança - Hercules", "min": 8, "max": 16}, {"id": 2, "nome": "Cinto de Segurança com Lombar - Hercules", "min": 8, "max": 16}, {"id": 3, "nome": "Cone Barril", "min": 13, "max": 26}, {"id": 4, "nome": "Escada Paralela", "min": 4, "max": 8}, {"id": 5, "nome": "Galão de água", "min": 3, "max": 6}, {"id": 6, "nome": "Plataforma", "min": 3, "max": 3}, {"id": 7, "nome": "Rede de avarias", "min": 2, "max": 4}, {"id": 8, "nome": "Corda Sisal", "min": 70, "max": 140}, {"id": 9, "nome": "Trava Quedas - Hercules", "min": 8, "max": 16}, {"id": 10, "nome": "Cinto de Segurança com Lombar -Steelflex", "min": 12, "max": 24}, {"id": 11, "nome": "Cinto de Segurança - Steelflex", "min": 12, "max": 24}, {"id": 12, "nome": "Trava Quedas - Steelflex", "min": 12, "max": 24}, {"id": 13, "nome": "Escada Plataforma", "min": 2, "max": 4}, {"id": 14, "nome": "Capa de Rádio", "min": 24, "max": null}, {"id": 15, "nome": "Rádio", "min": 24, "max": null}, {"id": 16, "nome": "Carregador e Fonte da Rádio", "min": 24, "max": null}, {"id": 17, "nome": "Tablet", "min": 5, "max": null}, {"id": 18, "nome": "Coletor", "min": 10, "max": null}, {"id": 19, "nome": "Assoprador", "min": null, "max": null}, {"id": 20, "nome": "Cone", "min": null, "max": null}, {"id": 21, "nome": "Vassouras", "min": 10, "max": null}, {"id": 22, "nome": "Cinta", "min": null, "max": null}, {"id": 23, "nome": "Gaiola de Resgate", "min": 1, "max": null}, {"id": 24, "nome": "Talha", "min": 6, "max": null}, {"id": 25, "nome": "Lona", "min": null, "max": null}, {"id": 26, "nome": "Big Bag", "min": null, "max": null}, {"id": 27, "nome": "Sinalizadores", "min": null, "max": null}, {"id": 28, "nome": "Alicate", "min": null, "max": null}, {"id": 29, "nome": "Fita Stretch", "min": null, "max": null}];
@@ -2506,6 +2696,24 @@ async function cargaDemo(){
     });
 
     // ── 2c. Programações, estoque por hora e contagem do armazém ──
+    // dados de período do embarque, para a TV mostrar giro e guincheiro
+    const placas=['RIO2A45','RIO7B12','RIO3C88','RIO5D21','RIO9E07','RIO4F63'];
+    const mots=['CLEBER SOUZA','WAGNER LIMA','JAILSON COSTA','MARCOS PAULO','EDER SANTOS','IVAN BRAGA'];
+    [0,1,2,3].forEach(pi=>{
+      if(pi!==curPeriodo()&&pi!==(curPeriodo()+3)%4)return;
+      lote.push({col:'periodo_embarque',doc:{
+        navioId:navRef.id, navio:'GREEN VITORIA', data:hojeD,
+        periodo:PER_LABELS[pi], periodoIdx:pi,
+        ternos:[1,2].map(t=>({
+          terno:t,
+          guincheiro:pick(['ROBSON MOTA','JEAN CARLOS','ADRIANO LUZ','WESLEY PINTO']),
+          portaEntra:String(t===1?2:4), portaSai:String(t===1?3:5),
+          carretas:[0,1,2].map(k=>({placa:placas[(t-1)*3+k],motorista:mots[(t-1)*3+k],
+                                    trocadoEm:null,placaAnterior:null,motoristaAnterior:null}))
+        })),
+        atualizadoPor:'STEFANI VIEIRA', atualizadoEm:new Date().toISOString(), demo:true}});
+    });
+
     lote.push({col:'inversoes',doc:{
       data:hojeD, periodo:PER_LABELS[curPeriodo()], periodoIdx:curPeriodo(), turno:turnoHoje,
       prefixo:'L34', programacaoId:null,
@@ -2690,7 +2898,7 @@ async function purgar30(){
   const alvos=[];
   try{
     // 1. coleta tudo que será apagado
-    for(const col of ['registros','embarque_horas','estoque_horas','contagens_armazem','inversoes']){
+    for(const col of ['registros','embarque_horas','estoque_horas','contagens_armazem','inversoes','periodo_embarque']){
       const snap=await db.collection(col).where('data','<',corte).get();
       dump.colecoes[col]=snap.docs.map(d=>({id:d.id,...d.data()}));
       snap.docs.forEach(d=>alvos.push(d.ref));
@@ -2746,7 +2954,7 @@ async function limparHistorico(){
   btn.disabled=true; btn.textContent='Apagando...';
   let n=0;
   try{
-    for(const col of ['registros','embarque_horas','navios','programacoes','estoque_horas','contagens_armazem','inversoes']){
+    for(const col of ['registros','embarque_horas','navios','programacoes','estoque_horas','contagens_armazem','inversoes','periodo_embarque']){
       while(true){
         const snap=await db.collection(col).limit(400).get();
         if(snap.empty)break;
@@ -2770,6 +2978,7 @@ async function limparHistorico(){
 // ══════════════════════════════════════════════════════════
 //  FORMULÁRIO DO AUXILIAR — hora a hora, efetivo por nome
 // ══════════════════════════════════════════════════════════
+const BUFFER_ATADOS=1920;   // 40 vagões
 const TON_ATADO_AUX=2, TON_VAGAO_AUX=96;
 let auxSel=[];   // matrículas dos colegas marcados
 
@@ -2826,18 +3035,82 @@ function calcEfetivo(){
   el.textContent=`Total na frente: ${e.total} — ${e.auxCasa} auxiliar(es)${nomes}`;
 }
 
+// ══════════════════════════════════════════════════════════
+//  SIMULTANEIDADE FERRO × RODO  —  avisa, não trava
+// ══════════════════════════════════════════════════════════
+let _ctx={progFerro:null,progRodo:null,progAvaria:null,vagoesFeitos:0,buffer:null,bufferData:null};
+
+async function carregaContexto(){
+  if(!db)return;
+  try{
+    const pr=await db.collection('programacoes').where('aberta','==',true).get();
+    const ps=pr.docs.map(d=>({id:d.id,...d.data()}));
+    _ctx.progFerro =ps.find(p=>p.tipo==='ferro')||null;
+    _ctx.progRodo  =ps.find(p=>p.tipo==='rodo')||null;
+    _ctx.progAvaria=ps.find(p=>p.tipo==='avaria')||null;
+
+    const rg=await db.collection('registros').where('data','==',today()).get();
+    _ctx.vagoesFeitos=rg.docs.map(d=>d.data())
+      .filter(r=>r.atividade==='recebimento'&&r.producao?.tipo==='Ferro')
+      .reduce((s,r)=>s+(r.producao.qtd||0),0);
+
+    const ct=await db.collection('contagens_armazem').orderBy('data','desc').limit(1).get();
+    if(!ct.empty){
+      const c=ct.docs[0].data();
+      const b=(c.pontos||[]).find(x=>String(x.ponto).trim().toUpperCase()==='BUFFER');
+      _ctx.buffer=b?b.qtd:null; _ctx.bufferData=c.data;
+    }
+  }catch(e){console.error(e);}
+  avisoSimultaneo();
+}
+
+// "9 de 22 carretas" quando houver programação; senão só o número
+function carretasDe(feitas,tipo){
+  const p=tipo==='avaria'?_ctx.progAvaria:_ctx.progRodo;
+  const alvo=p?.carretasProg||0;
+  return alvo?`${feitas} de ${alvo} carretas`:`${feitas} carretas`;
+}
+
+function avisoSimultaneo(){
+  const box=document.getElementById('aviso-simult');
+  if(!box)return;
+  const atv=window._atvSel||document.querySelector('input[name="atv"]:checked')?.value;
+  const tipo=document.querySelector('input[name="receb-tipo"]:checked')?.value;
+  const alvoRodo=(atv==='avarias')||(atv==='recebimento'&&tipo==='Rodo');
+  if(!alvoRodo){box.style.display='none';return;}
+
+  const motivos=[];
+  const prog=_ctx.progFerro?.vagoesProg||0;
+  const pend=Math.max(0,prog-_ctx.vagoesFeitos);
+  if(_ctx.progFerro&&pend>0)
+    motivos.push(`ainda faltam ${pend} de ${prog} vagões para descarregar`);
+  if(_ctx.buffer!=null&&_ctx.buffer>=BUFFER_ATADOS*0.9)
+    motivos.push(`o buffer estava com ${_ctx.buffer} atados na contagem de `+
+                 `${String(_ctx.bufferData).slice(8,10)}/${String(_ctx.bufferData).slice(5,7)}, `+
+                 `perto da capacidade de ${BUFFER_ATADOS}`);
+
+  if(!motivos.length){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML=`<b>⚠️ Confira antes de lançar.</b><br>
+    O rodoviário só deve ser recebido depois que a composição inteira for descarregada, e com
+    espaço no buffer. Aqui, ${motivos.join(' e ')}.<br>
+    <span style="font-weight:600;">Se estiver certo, pode lançar mesmo assim — isto é um aviso,
+    não um bloqueio. O buffer vem da última contagem, então pode estar desatualizado.</span>`;
+}
+
 // ── Grades hora a hora ──
 function horasDoPeriodo(){ return HORAS_PERIODO[PER_LABELS[curPeriodo()]]||[]; }
 
 function montaGradeAvaria(){
   const hs=horasDoPeriodo();
-  const cols='grid-template-columns:56px 1.3fr 1fr;';
-  let h=`<div class="hh-cab" style="${cols}"><span>Hora</span><span>Sigla</span><span>Atados</span></div>`;
+  const cols='grid-template-columns:52px 1.2fr .8fr .8fr;';
+  let h=`<div class="hh-cab" style="${cols}"><span>Hora</span><span>Sigla</span><span>Carretas</span><span>Atados</span></div>`;
   h+=hs.map(hr=>{
     const id=hr.replace('\u00d7','');
     return `<div class="hh-lin" id="avaria-l-${id}" style="${cols}">
       <div class="hh-h">${hr}</div>
       <input type="text" id="avaria-sku-${id}" placeholder="TSP-EP" oninput="calcHH('avaria')" style="text-transform:uppercase;">
+      <input type="text" inputmode="numeric" id="avaria-car-${id}" placeholder="—" oninput="calcHH('avaria')">
       <input type="text" inputmode="numeric" id="avaria-at-${id}" placeholder="—" oninput="calcHH('avaria')">
     </div>`;
   }).join('');
@@ -2885,14 +3158,14 @@ function calcHH(prefixo){
     const l=lerHH('rodo',[{k:'car'},{k:'at'}]);
     const c=l.reduce((s,x)=>s+(x.car||0),0), a=l.reduce((s,x)=>s+(x.at||0),0);
     document.getElementById('receb-calc').textContent=
-      a?`${c} carretas · ${a} atados × ${TON_ATADO_AUX} t = ${fmtT(a*TON_ATADO_AUX)} toneladas`:'';
+      (a||c)?`${carretasDe(c,'rodo')} · ${a} atados × ${TON_ATADO_AUX} t = ${fmtT(a*TON_ATADO_AUX)} toneladas`:'';
   }
   if(prefixo==='avaria'){
-    const l=lerHH('avaria',[{k:'at'}]);
-    const a=l.reduce((s,x)=>s+(x.at||0),0);
+    const l=lerHH('avaria',[{k:'car'},{k:'at'}]);
+    const a=l.reduce((s,x)=>s+(x.at||0),0), c=l.reduce((s,x)=>s+(x.car||0),0);
     const sk=[...new Set(horasDoPeriodo().map(hr=>document.getElementById('avaria-sku-'+hr.replace('\u00d7',''))?.value.trim()).filter(Boolean))];
     document.getElementById('avar-calc').textContent=
-      a?`${a} atados × ${TON_ATADO_AUX} t = ${fmtT(a*TON_ATADO_AUX)} toneladas${sk.length?' · '+sk.join(', '):''}`:'';
+      (a||c)?`${carretasDe(c,'avaria')} · ${a} atados × ${TON_ATADO_AUX} t = ${fmtT(a*TON_ATADO_AUX)} toneladas${sk.length?' · '+sk.join(', '):''}`:'';
   }
 }
 
@@ -3411,6 +3684,8 @@ function podeInventariar(){return ['CONTROLADOR','ASSISTENTE'].includes(currentL
 function turnoPermitido(){return ehCoordenador()?null:(currentLider?.turno||null);}
 
 // Trava os seletores de turno de quem não é coordenador
+const ehEstagio=()=>(currentLider?.funcao||'')==='ESTAGIARIA';
+
 function aplicarEscopo(){
   if(!currentLider)return;
   const tv=turnoPermitido();
@@ -3435,12 +3710,16 @@ function aplicarEscopo(){
   document.querySelectorAll('#kpi-nav .tab').forEach((el,i)=>{
     let oculta=(tabs[i]==='auxind'||tabs[i]==='opind')&&!podeGente;
     if(tabs[i]==='ret'&&!podeRetaguarda())oculta=true;
+    if(ehEstagio())oculta=(tabs[i]!=='inv');   // estágio: só o inventário
     el.style.display=oculta?'none':'';
   });
 }
 
 function showKTab(t){
   const tabs=['dash','embh','hist','manut','maqhist','turnos','auxind','opind','ret','inv'];
+  if(ehEstagio()&&t!=='inv'){
+    toast('Seu acesso é apenas ao inventário de materiais.','danger');return;
+  }
   if((t==='auxind'||t==='opind')&&!(ehCoordenador()||ehSupervisor())){
     toast('Acesso restrito a supervisor e coordenação.','danger');return;
   }
