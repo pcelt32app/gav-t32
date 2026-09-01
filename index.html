@@ -1059,8 +1059,21 @@ function mkDemo(){
 }
 
 // ══ HELPERS ══
-function today(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
-function curPeriodo(){const h=new Date().getHours();if(h>=7&&h<13)return 0;if(h>=13&&h<19)return 1;if(h>=19)return 2;return 3;}
+// data da operação: entre 00h e 01h ainda pertence à folha do dia anterior
+function today(){
+  const n=new Date();
+  if(n.getHours()<1)n.setDate(n.getDate()-1);
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+// data do calendário, sem o deslocamento da madrugada
+function todayCal(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
+function curPeriodo(){
+  const h=new Date().getHours();
+  if(h>=7&&h<13)return 0;
+  if(h>=13&&h<19)return 1;
+  if(h>=19||h<1)return 2;      // 19x01 atravessa a meia-noite
+  return 3;                     // 01x07
+}
 function getTurno(d,pi){const r=APP_DATA.escala[d];return r?r[pi]:'?';}
 function fmtDate(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
 function positionPop(pop,rect){let top=rect.bottom+6+window.scrollY,left=rect.left+window.scrollX;if(left+290>window.innerWidth)left=window.innerWidth-300;if(top+320>window.innerHeight+window.scrollY)top=rect.top+window.scrollY-320;pop.style.top=top+'px';pop.style.left=left+'px';}
@@ -1920,9 +1933,11 @@ function montaHoras(){
   const ehCorrente=document.getElementById('eh-data').value===today()&&
                    PER_LABELS.indexOf(per)===curPeriodo();
   const agora=new Date().getHours();
+  const ini0=[7,13,19,1][PER_LABELS.indexOf(per)];          // hora em que o período começa
+  const rel=x=>(((x-ini0)%24)+24)%24;                        // posição dentro do período
   sel.innerHTML=hs.map(h=>{
     const ini=parseInt(h.slice(0,2),10);
-    const futura=ehCorrente&&(((ini-agora)%24)+24)%24<12&&ini>agora;
+    const futura=ehCorrente&&rel(ini)>rel(agora);
     return `<option ${futura?'disabled':''}>${h}${futura?' (ainda não ocorreu)':''}</option>`;
   }).join('');
   if(per===PER_LABELS[curPeriodo()]&&document.getElementById('eh-data').value===today())
@@ -2449,8 +2464,10 @@ function pintaBotoesAdmin(){
 }
 
 function diasAtras(n){
-  const d=new Date(); d.setDate(d.getDate()-n);
-  return d.toISOString().slice(0,10);
+  const d=new Date();
+  if(d.getHours()<1)d.setDate(d.getDate()-1);   // acompanha a data da operação
+  d.setDate(d.getDate()-n);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}

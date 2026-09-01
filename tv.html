@@ -53,6 +53,11 @@
   .bloco.f36{flex:36 1 0;min-height:0}
   .bloco.f38{flex:38 1 0;min-height:0}
   .bloco.f40{flex:40 1 0;min-height:0}
+  /* do tamanho do conteúdo, encolhendo e rolando quando não couber */
+  .bloco.auto{flex:0 1 auto;min-height:0}
+  .bloco.resto{flex:1 1 auto;min-height:0}
+  .bloco.teto40{max-height:40%}
+  .bloco.teto42{max-height:42%}
   .bloco > div{min-height:0;overflow:auto}
   .bloco > div::-webkit-scrollbar{width:5px}
   .bloco > div::-webkit-scrollbar-thumb{background:#C9D6E3;border-radius:3px}
@@ -213,17 +218,17 @@
   <div class="col">
     <div class="col-rot">Retaguarda</div>
 
-    <div class="bloco b-est f36">
+    <div class="bloco b-est auto teto42">
       <h2>Estoque do armazém<span class="dir" id="est-dir"></span></h2>
       <div id="est-corpo"></div>
     </div>
 
-    <div class="bloco b-desc f28">
+    <div class="bloco b-desc resto">
       <h2>Descarga<span class="dir" id="desc-dir"></span></h2>
       <div id="desc-corpo"></div>
     </div>
 
-    <div class="bloco b-oper f38">
+    <div class="bloco b-oper auto teto40">
       <h2>Operação T32 · frentes de trabalho</h2>
       <div class="cresce" id="oper-corpo"></div>
     </div>
@@ -273,8 +278,10 @@ const invAberta=()=>dados.inversoes.find(x=>x.solicitadoEm&&!x.concluidoEm)||nul
 const fmt=n=>(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
 const fmt1=n=>(n||0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
 const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-const hoje=()=>iso(new Date());
-const ontem=()=>{const d=new Date();d.setDate(d.getDate()-1);return iso(d);};
+// data da operação: entre 00h e 01h a folha ainda é a do dia anterior
+const dataOper=()=>{const d=new Date();if(d.getHours()<1)d.setDate(d.getDate()-1);return d;};
+const hoje=()=>iso(dataOper());
+const ontem=()=>{const d=dataOper();d.setDate(d.getDate()-1);return iso(d);};
 
 // as duas metades do turno de 12h que já aconteceram
 // 07x13 e 13x19 no mesmo dia; 19x01 de um dia emenda com 01x07 do seguinte
@@ -282,11 +289,17 @@ function janelaTurno(){
   const p=curPer(), h=hoje(), o=ontem();
   if(p===0)return [[h,0]];
   if(p===1)return [[h,0],[h,1]];
-  if(p===2)return [[h,2]];
-  return [[o,2],[h,3]];
+  if(p===2)return [[h,2]];            // inclui as horas depois da meia-noite
+  return [[o,2],[h,3]];               // 01x07 emenda com o 19x01 do dia anterior
 }
 const naJanela=(data,pi)=>janelaTurno().some(([d,p])=>d===data&&p===pi);
-function curPer(){const h=new Date().getHours();return h>=7&&h<13?0:h>=13&&h<19?1:h>=19?2:3;}
+function curPer(){
+  const h=new Date().getHours();
+  if(h>=7&&h<13)return 0;
+  if(h>=13&&h<19)return 1;
+  if(h>=19||h<1)return 2;      // 19x01 atravessa a meia-noite
+  return 3;                     // 01x07
+}
 function turnoAgora(){const e=DADOS.escala[hoje()];return e?e[curPer()]:'\u2014';}
 
 let db=null, unsubHoras=null;
@@ -585,8 +598,6 @@ function rodape(){
   const lista=frentesDoPeriodo();
   const doTurno=regsDoTurno();
   const inicioTurno=[7,7,19,19][curPer()];
-  const hAgora=new Date().getHours();
-  const decorrido=(((hAgora-inicioTurno)%24)+24)%24;
   const tRetag=doTurno.filter(r=>r.atividade!=='embarque').reduce((s,r)=>s+tonDoRegistro(r),0);
   const tEmb=dados.horas.filter(x=>naJanela(x.data,x.periodoIdx)).reduce((s,x)=>s+(x.somaTon||0),0);
   const vivas=lista.filter(r=>r.frente&&r.frente.ativa).length;
@@ -689,13 +700,16 @@ function embGrade(){
   if(!dados.navio){box.innerHTML='<div class="vazio">Sem navio para lan\u00e7ar horas.</div>';return;}
   const doDia=dados.horas.filter(x=>x.data===hoje())
     .sort((a,b)=>String(a.hora).localeCompare(String(b.hora)));
+  // apenas o período em curso: 19x01 não mistura com o 13x19
+  const doPer=doDia.filter(x=>x.periodoIdx===curPer());
   document.getElementById('emb-grade-dir').textContent=
-    doDia.length?`${fmt(doDia.reduce((s,x)=>s+(x.somaTon||0),0))} t hoje`:'';
-  if(!doDia.length){box.innerHTML='<div class="vazio">Nenhuma hora lan\u00e7ada hoje.</div>';return;}
+    doPer.length?`${fmt(doPer.reduce((s,x)=>s+(x.somaTon||0),0))} t no per\u00edodo`:'';
+  if(!doPer.length){box.innerHTML=
+    `<div class="vazio">Nenhuma hora lan\u00e7ada no per\u00edodo ${PER[curPer()]}.</div>`;return;}
 
   const nT=dados.navio.ternos||2;
 
-  const linhas=doDia.slice(-9);
+  const linhas=doPer.slice(-6);
   box.innerHTML=`<table class="grade">
     <thead><tr><th>Hora</th>
       ${[...Array(nT)].map((_,i)=>{
